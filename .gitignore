@@ -1,6 +1,8 @@
 client/node_modules/
 server/node_modules/
 server/uploads/
-server/uploads/
+server/chunks/
 client/build/
 server/build/
+.trae/
+.codebuddy/

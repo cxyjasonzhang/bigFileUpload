@@ -4,367 +4,337 @@
     <el-upload
       ref="uploadRef"
       drag
+      multiple
       :auto-upload="false"
       :show-file-list="false"
       :on-change="handleFileChange"
     >
       <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-      <div class="el-upload__text">拖拽文件到此处，或 <em>点击选择文件</em></div>
+      <div class="el-upload__text">
+        拖拽文件到此处，或 <em>点击选择文件</em>
+      </div>
       <template #tip>
-        <div class="el-upload__tip">支持大文件上传，自动分片、断点续传</div>
+        <div class="el-upload__tip">
+          支持多文件同时添加，自动排队上传、断点续传
+        </div>
       </template>
     </el-upload>
 
-    <!-- 已选文件信息 -->
-    <div v-if="file" class="file-info">
-      <el-descriptions :column="2" border size="small">
-        <el-descriptions-item label="文件名">{{ file.name }}</el-descriptions-item>
-        <el-descriptions-item label="大小">{{ formatSize(file.size) }}</el-descriptions-item>
-      </el-descriptions>
-    </div>
+    <!-- 恢复文件选择（隐藏的 input） -->
+    <input
+      ref="resumeFileInput"
+      type="file"
+      style="display: none"
+      @change="handleResumeFileChange"
+    />
 
-    <!-- Hash 计算进度 -->
-    <div v-if="hashing" class="progress-section">
-      <span class="progress-label">🔍 计算文件指纹中...</span>
-      <el-progress :percentage="hashProgress" :stroke-width="10" status="success" />
-    </div>
+    <!-- 任务列表 -->
+    <div v-if="queue.tasks.length > 0" class="task-list">
+      <div class="task-list-header">
+        <span>上传任务列表</span>
+        <el-button
+          v-if="hasSuccessTasks"
+          type="danger"
+          size="small"
+          text
+          @click="clearSuccessTasks"
+        >
+          清除已完成
+        </el-button>
+      </div>
 
-    <!-- 上传进度 -->
-    <div v-if="uploading" class="progress-section">
-      <span class="progress-label">📤 上传中...</span>
-      <el-progress :percentage="uploadProgress" :stroke-width="14" :format="uploadProgressFormat" />
-      <div class="upload-detail">
-        已上传 {{ uploadedChunks }} / {{ totalChunks }} 个分片
+      <div
+        v-for="task in queue.tasks"
+        :key="task.id"
+        class="task-item"
+        :class="{ 'task-item--success': task.status === TASK_STATUS.SUCCESS }"
+      >
+        <div class="task-header">
+          <div class="task-info">
+            <span
+              class="task-name"
+              :class="{
+                'task-name--done': task.status === TASK_STATUS.SUCCESS,
+              }"
+            >
+              {{ task.fileName }}
+            </span>
+            <span class="task-size">{{ formatSize(task.fileSize) }}</span>
+          </div>
+          <el-tag :type="statusTagType(task.status)" size="small" effect="dark">
+            {{ statusLabel(task.status) }}
+          </el-tag>
+        </div>
+
+        <!-- Hash 计算进度 -->
+        <div v-if="task.status === TASK_STATUS.HASHING" class="task-progress">
+          <el-progress
+            :percentage="task.hashProgress"
+            :stroke-width="6"
+            status="success"
+            :show-text="false"
+          />
+          <span class="task-progress-text"
+            >计算文件指纹 {{ task.hashProgress }}%</span
+          >
+        </div>
+
+        <!-- 上传进度 -->
+        <div v-if="isProgressVisible(task)" class="task-progress">
+          <el-progress
+            :percentage="task.uploadProgress"
+            :stroke-width="8"
+            :color="task.status === TASK_STATUS.PAUSED ? '#E6A23C' : '#409EFF'"
+          />
+          <span class="task-progress-text">
+            {{ task.uploadedChunks }} / {{ task.totalChunks }} 分片
+          </span>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="task-actions">
+          <!-- 排队中 -->
+          <template v-if="task.status === TASK_STATUS.PENDING">
+            <el-button
+              v-if="queue.hasFile(task.id)"
+              type="primary"
+              size="small"
+              @click="queue.startTask(task.id)"
+            >
+              开始
+            </el-button>
+            <el-button
+              type="danger"
+              size="small"
+              text
+              @click="queue.removeTask(task.id)"
+            >
+              移除
+            </el-button>
+          </template>
+
+          <!-- 上传中 -->
+          <template v-if="task.status === TASK_STATUS.UPLOADING">
+            <el-button
+              type="warning"
+              size="small"
+              @click="handlePause(task.id)"
+            >
+              暂停
+            </el-button>
+          </template>
+
+          <!-- 已暂停 -->
+          <template v-if="task.status === TASK_STATUS.PAUSED">
+            <el-button
+              type="primary"
+              size="small"
+              @click="handleResume(task.id)"
+            >
+              继续
+            </el-button>
+            <el-button
+              type="danger"
+              size="small"
+              text
+              @click="queue.cancelTask(task.id)"
+            >
+              取消
+            </el-button>
+          </template>
+
+          <!-- 上传失败 -->
+          <template v-if="task.status === TASK_STATUS.ERROR">
+            <el-button
+              v-if="queue.hasFile(task.id)"
+              type="warning"
+              size="small"
+              @click="handleRetry(task.id)"
+            >
+              重试
+            </el-button>
+            <el-button
+              v-else
+              type="warning"
+              size="small"
+              @click="handleSelectFileForResume(task.id)"
+            >
+              选择文件重试
+            </el-button>
+            <el-button
+              type="danger"
+              size="small"
+              text
+              @click="queue.removeTask(task.id)"
+            >
+              移除
+            </el-button>
+          </template>
+
+          <!-- 上传成功 -->
+          <template v-if="task.status === TASK_STATUS.SUCCESS">
+            <el-button
+              type="danger"
+              size="small"
+              text
+              @click="queue.removeTask(task.id)"
+            >
+              移除
+            </el-button>
+          </template>
+        </div>
       </div>
     </div>
 
-    <!-- 上传中：暂停 -->
-    <div class="action-bar" v-if="uploading && !paused">
-      <el-button type="warning" @click="pauseUpload">
-        ⏸️ 暂停上传
-      </el-button>
+    <!-- 空状态 -->
+    <div v-else class="empty-state">
+      <el-empty description="暂无上传任务" :image-size="80" />
     </div>
-
-    <!-- 已暂停：继续 + 取消 -->
-    <div class="action-bar" v-if="paused">
-      <el-button type="primary" @click="continueUpload">
-        ▶️ 继续上传
-      </el-button>
-      <el-button type="danger" @click="cancelUpload">
-        ✕ 取消上传
-      </el-button>
-    </div>
-
-    <!-- 未开始：开始上传 / 断点续传 -->
-    <div class="action-bar" v-if="file && !uploading && !hashing && !uploadSuccess">
-      <el-button type="primary" @click="startUpload" :disabled="!file">
-        🚀 开始上传
-      </el-button>
-      <el-button v-if="hasUnfinishedUpload" type="warning" @click="resumeUpload">
-        🔄 断点续传
-      </el-button>
-    </div>
-
-    <!-- 上传结果 -->
-    <el-result
-      v-if="uploadSuccess"
-      icon="success"
-      title="上传成功！"
-      :sub-title="file?.name"
-    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { UploadFilled } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
-import { calculateFileHash, createFileChunks } from '../utils/file.js'
-import { checkFile, uploadChunk, mergeChunks } from '../utils/api.js'
+import { ref, computed, onMounted } from "vue";
+import { UploadFilled } from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
+import { UploadQueue, TASK_STATUS } from "../utils/uploadQueue.js";
 
-const CHUNK_SIZE = 5 * 1024 * 1024 // 5MB
+const queue = new UploadQueue();
+const uploadRef = ref();
+const resumeFileInput = ref();
+const pendingResumeTaskId = ref(null);
 
-const file = ref(null)
-const fileHash = ref('')
-const hashing = ref(false)
-const hashProgress = ref(0)
-const uploading = ref(false)
-const uploadProgress = ref(0)
-const uploadedChunks = ref(0)
-const totalChunks = ref(0)
-const uploadSuccess = ref(false)
-const paused = ref(false)
-const hasUnfinishedUpload = ref(false)
-const skipChunks = ref(new Set())
-let abortController = null
-
-const uploadRef = ref()
+const hasSuccessTasks = computed(() =>
+  queue.tasks.some((t) => t.status === TASK_STATUS.SUCCESS),
+);
 
 function handleFileChange(uploadFile) {
-  file.value = uploadFile.raw
-  uploadSuccess.value = false
-  hasUnfinishedUpload.value = false
-  hashProgress.value = 0
-  uploadProgress.value = 0
-  uploadedChunks.value = 0
+  const task = queue.addTask(uploadFile.raw);
+  // 如果没有正在上传的任务，自动开始
+  if (!queue.currentTaskId) {
+    queue.startTask(task.id);
+  }
+  // 清空 el-upload 内部文件列表，避免重复
+  uploadRef.value?.clearFiles();
+}
+
+function handlePause(taskId) {
+  queue.pauseTask(taskId);
+}
+
+function handleResume(taskId) {
+  if (queue.hasFile(taskId)) {
+    queue.resumeTask(taskId);
+  } else {
+    // 需要重新选择文件
+    handleSelectFileForResume(taskId);
+  }
+}
+
+function handleRetry(taskId) {
+  if (queue.hasFile(taskId)) {
+    queue.updateTask(taskId, { status: TASK_STATUS.PENDING });
+    if (!queue.currentTaskId) {
+      queue.startTask(taskId);
+    }
+  } else {
+    handleSelectFileForResume(taskId);
+  }
+}
+
+function handleSelectFileForResume(taskId) {
+  pendingResumeTaskId.value = taskId;
+  resumeFileInput.value?.click();
+}
+
+function handleResumeFileChange(e) {
+  const file = e.target.files?.[0];
+  if (!file || !pendingResumeTaskId.value) return;
+
+  const taskId = pendingResumeTaskId.value;
+  pendingResumeTaskId.value = null;
+
+  try {
+    queue.resumeTask(taskId, file);
+    ElMessage.success("文件已选择，开始恢复上传");
+  } catch (err) {
+    if (err.message === "NO_FILE") {
+      ElMessage.error("文件选择失败，请重试");
+    }
+  }
+
+  // 清空 input 值，允许重复选择同一文件
+  e.target.value = "";
+}
+
+function clearSuccessTasks() {
+  const successIds = queue.tasks
+    .filter((t) => t.status === TASK_STATUS.SUCCESS)
+    .map((t) => t.id);
+  successIds.forEach((id) => queue.removeTask(id));
+}
+
+function isProgressVisible(task) {
+  return (
+    [TASK_STATUS.UPLOADING, TASK_STATUS.PAUSED, TASK_STATUS.ERROR].includes(
+      task.status,
+    ) && task.totalChunks > 0
+  );
+}
+
+function statusLabel(status) {
+  const map = {
+    [TASK_STATUS.PENDING]: "排队中",
+    [TASK_STATUS.HASHING]: "计算中",
+    [TASK_STATUS.UPLOADING]: "上传中",
+    [TASK_STATUS.PAUSED]: "已暂停",
+    [TASK_STATUS.SUCCESS]: "已完成",
+    [TASK_STATUS.ERROR]: "失败",
+  };
+  return map[status] || status;
+}
+
+function statusTagType(status) {
+  const map = {
+    [TASK_STATUS.PENDING]: "info",
+    [TASK_STATUS.HASHING]: "warning",
+    [TASK_STATUS.UPLOADING]: "",
+    [TASK_STATUS.PAUSED]: "warning",
+    [TASK_STATUS.SUCCESS]: "success",
+    [TASK_STATUS.ERROR]: "danger",
+  };
+  return map[status] || "info";
 }
 
 function formatSize(bytes) {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
-function uploadProgressFormat(percentage) {
-  return `${percentage}%`
-}
+// 页面加载时恢复任务列表
+onMounted(async () => {
+  queue.loadTasks();
 
-async function startUpload() {
-  if (!file.value) return
-
-  uploadSuccess.value = false
-  uploading.value = true
-  uploadedChunks.value = 0
-  skipChunks.value = new Set()
-
-  try {
-    // 1. 计算文件 hash
-    hashing.value = true
-    hashProgress.value = 0
-    fileHash.value = await calculateFileHash(file.value, (progress) => {
-      hashProgress.value = progress
-    })
-    hashing.value = false
-
-    // 2. 检查文件是否已上传（秒传）
-    const { data: checkResult } = await checkFile(fileHash.value, file.value.name)
-    if (checkResult.data.uploaded) {
-      ElMessage.success('文件已存在，秒传成功！')
-      uploadSuccess.value = true
-      uploading.value = false
-      uploadProgress.value = 100
-      return
-    }
-
-    // 3. 记录已上传的分片（断点续传）
-    const existingChunks = checkResult.data.uploadedChunks || []
-    skipChunks.value = new Set(existingChunks)
-
-    // 4. 创建分片并上传
-    const chunks = createFileChunks(file.value, CHUNK_SIZE)
-    totalChunks.value = chunks.length
-    uploadedChunks.value = skipChunks.value.size
-    uploadProgress.value = Math.round((uploadedChunks.value / totalChunks.value) * 100)
-
-    await uploadChunks(chunks)
-
-    // 5. 合并分片
-    const { data: mergeResult } = await mergeChunks(
-      fileHash.value,
-      file.value.name,
-      totalChunks.value
-    )
-
-    if (mergeResult.code === 0) {
-      ElMessage.success('上传成功！')
-      uploadSuccess.value = true
-      uploadProgress.value = 100
-    } else {
-      ElMessage.error(mergeResult.msg || '合并失败')
-    }
-  } catch (err) {
-    if (err.paused) {
-      hasUnfinishedUpload.value = true
-      return
-    }
-    console.error(err)
-    ElMessage.error('上传失败：' + (err.message || '未知错误'))
-    hasUnfinishedUpload.value = true
-  } finally {
-    uploading.value = false
-    hashing.value = false
-  }
-}
-
-async function resumeUpload() {
-  if (!file.value || !fileHash.value) {
-    ElMessage.warning('请重新选择文件后使用断点续传')
-    return
+  // 同步未完成任务的服务端状态
+  const unfinishedTasks = queue.tasks.filter(
+    (t) => t.status !== TASK_STATUS.SUCCESS && t.fileHash,
+  );
+  for (const task of unfinishedTasks) {
+    await queue.syncTaskWithServer(task.id);
   }
 
-  uploading.value = true
-  uploadSuccess.value = false
-
-  try {
-    // 检查已上传分片
-    const { data: checkResult } = await checkFile(fileHash.value, file.value.name)
-    if (checkResult.data.uploaded) {
-      ElMessage.success('文件已存在，秒传成功！')
-      uploadSuccess.value = true
-      uploading.value = false
-      uploadProgress.value = 100
-      return
-    }
-
-    const existingChunks = checkResult.data.uploadedChunks || []
-    skipChunks.value = new Set(existingChunks)
-
-    const chunks = createFileChunks(file.value, CHUNK_SIZE)
-    totalChunks.value = chunks.length
-    uploadedChunks.value = skipChunks.value.size
-    uploadProgress.value = Math.round((uploadedChunks.value / totalChunks.value) * 100)
-
-    await uploadChunks(chunks)
-
-    const { data: mergeResult } = await mergeChunks(
-      fileHash.value,
-      file.value.name,
-      totalChunks.value
-    )
-
-    if (mergeResult.code === 0) {
-      ElMessage.success('上传成功！')
-      uploadSuccess.value = true
-      uploadProgress.value = 100
-    } else {
-      ElMessage.error(mergeResult.msg || '合并失败')
-    }
-  } catch (err) {
-    if (err.paused) {
-      hasUnfinishedUpload.value = true
-      return
-    }
-    console.error(err)
-    ElMessage.error('续传失败：' + (err.message || '未知错误'))
-  } finally {
-    uploading.value = false
-  }
-}
-
-async function uploadChunks(chunks) {
-  const CONCURRENT_LIMIT = 3 // 并发上传数
-  const tasks = chunks.filter(chunk => !skipChunks.value.has(chunk.index))
-
-  abortController = new AbortController()
-  let index = 0
-
-  async function runNext() {
-    while (index < tasks.length && !paused.value) {
-      const currentIndex = index++
-      const chunk = tasks[currentIndex]
-
-      const formData = new FormData()
-      formData.append('fileHash', fileHash.value)
-      formData.append('chunkIndex', chunk.index)
-      formData.append('file', chunk.file)
-
-      try {
-        await uploadChunk(formData, { signal: abortController.signal })
-        uploadedChunks.value++
-        uploadProgress.value = Math.round((uploadedChunks.value / totalChunks.value) * 100)
-      } catch (err) {
-        if (err.code === 'ERR_CANCELED') {
-          // 被暂停信号取消，不视为错误
-          return
-        }
-        throw err
-      }
-    }
-  }
-
-  // 并发控制
-  const workers = []
-  for (let i = 0; i < Math.min(CONCURRENT_LIMIT, tasks.length); i++) {
-    workers.push(runNext())
-  }
-
-  await Promise.all(workers)
-
-  // 如果是暂停状态，抛出特殊标记
-  if (paused.value) {
-    throw { paused: true }
-  }
-}
-
-// 暂停上传
-function pauseUpload() {
-  paused.value = true
-  if (abortController) {
-    abortController.abort()
-  }
-}
-
-// 继续上传（暂停后恢复）
-async function continueUpload() {
-  if (!file.value || !fileHash.value) {
-    ElMessage.warning('请重新选择文件后重试')
-    return
-  }
-
-  paused.value = false
-  uploading.value = true
-  uploadSuccess.value = false
-
-  try {
-    const { data: checkResult } = await checkFile(fileHash.value, file.value.name)
-    if (checkResult.data.uploaded) {
-      ElMessage.success('文件已存在，秒传成功！')
-      uploadSuccess.value = true
-      uploading.value = false
-      uploadProgress.value = 100
-      return
-    }
-
-    const existingChunks = checkResult.data.uploadedChunks || []
-    skipChunks.value = new Set(existingChunks)
-
-    const chunks = createFileChunks(file.value, CHUNK_SIZE)
-    uploadedChunks.value = skipChunks.value.size
-    uploadProgress.value = Math.round((uploadedChunks.value / totalChunks.value) * 100)
-
-    await uploadChunks(chunks)
-
-    const { data: mergeResult } = await mergeChunks(fileHash.value, file.value.name, totalChunks.value)
-    if (mergeResult.code === 0) {
-      ElMessage.success('上传成功！')
-      uploadSuccess.value = true
-      uploadProgress.value = 100
-      hasUnfinishedUpload.value = false
-    } else {
-      ElMessage.error(mergeResult.msg || '合并失败')
-    }
-  } catch (err) {
-    if (err.paused) {
-      hasUnfinishedUpload.value = true
-      return
-    }
-    console.error(err)
-    ElMessage.error('上传失败：' + (err.message || '未知错误'))
-    hasUnfinishedUpload.value = true
-  } finally {
-    uploading.value = false
-  }
-}
-
-// 取消上传
-function cancelUpload() {
-  pauseUpload()
-  file.value = null
-  fileHash.value = ''
-  hashProgress.value = 0
-  uploadProgress.value = 0
-  uploadedChunks.value = 0
-  totalChunks.value = 0
-  uploadSuccess.value = false
-  hasUnfinishedUpload.value = false
-  skipChunks.value = new Set()
-  paused.value = false
-}
+  // 清除没有 fileHash 且没有 File 对象的任务（无法恢复）
+  const staleTasks = queue.tasks.filter(
+    (t) => !t.fileHash && !queue.hasFile(t.id),
+  );
+  staleTasks.forEach((t) => queue.removeTask(t.id));
+});
 </script>
 
-<style scoped>
+<style lang="css" scoped>
 .upload-card {
   background: #fff;
   border-radius: 12px;
@@ -372,33 +342,97 @@ function cancelUpload() {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-.file-info {
-  margin-top: 20px;
+.task-list {
+  margin-top: 24px;
 }
 
-.progress-section {
-  margin-top: 20px;
-}
-
-.progress-label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  color: #606266;
-  font-weight: 500;
-}
-
-.upload-detail {
-  margin-top: 8px;
-  font-size: 13px;
-  color: #909399;
-  text-align: center;
-}
-
-.action-bar {
-  margin-top: 20px;
+.task-list-header {
   display: flex;
-  justify-content: center;
-  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.task-item {
+  padding: 16px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+  background: #fafafa;
+  transition: all 0.3s;
+}
+
+.task-item:hover {
+  border-color: #d9ecff;
+  background: #f5f7fa;
+}
+
+.task-item--success {
+  opacity: 0.65;
+  background: #f0f9eb;
+  border-color: #e1f3d8;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.task-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.task-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
+}
+
+.task-name--done {
+  text-decoration: line-through;
+  color: #909399;
+}
+
+.task-size {
+  font-size: 12px;
+  color: #909399;
+  flex-shrink: 0;
+}
+
+.task-progress {
+  margin: 10px 0 8px;
+}
+
+.task-progress-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #909399;
+  text-align: right;
+}
+
+.task-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.empty-state {
+  margin-top: 20px;
 }
 </style>
