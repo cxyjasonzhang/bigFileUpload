@@ -1,4 +1,4 @@
-const mysql = require('mysql')
+const mysql = require('mysql2')
 const config = require('./config').db
 
 //连接数据库

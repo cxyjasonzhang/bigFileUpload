@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <h1>大文件上传</h1>
+    <h1>大文件上传 &amp; 用户管理</h1>
 
     <!-- 未登录 → 登录页 -->
     <Login
@@ -8,7 +8,7 @@
       @login-success="onLoginSuccess"
     />
 
-    <!-- 已登录 → 上传页 -->
+    <!-- 已登录 → 功能页 -->
     <template v-else>
       <div class="user-bar">
         <span class="user-info">
@@ -18,20 +18,31 @@
           退出登录
         </el-button>
       </div>
-      <FileUpload />
+
+      <el-tabs v-model="activeTab" type="border-card" class="main-tabs">
+        <el-tab-pane label="📁 文件上传" name="upload">
+          <FileUpload />
+        </el-tab-pane>
+        <el-tab-pane label="👥 用户管理" name="users">
+          <UserManagement />
+        </el-tab-pane>
+      </el-tabs>
     </template>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 import FileUpload from "./components/FileUpload.vue";
 import Login from "./components/Login.vue";
+import UserManagement from "./components/UserManagement.vue";
 import { authState, logout, initAuth } from "./utils/auth.js";
 
+const activeTab = ref("upload");
+
 function onLoginSuccess() {
-  // 登录成功后刷新 FileUpload 组件（重新挂载以恢复队列）
+  activeTab.value = "upload";
 }
 
 async function handleLogout() {
@@ -40,7 +51,6 @@ async function handleLogout() {
 }
 
 onMounted(async () => {
-  // 尝试用 refresh_token 恢复登录态
   await initAuth();
 });
 </script>
@@ -59,7 +69,7 @@ body {
 }
 
 .app-container {
-  max-width: 700px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 40px 20px;
 }
@@ -84,5 +94,20 @@ h1 {
   color: #fff;
   font-size: 14px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.main-tabs {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.main-tabs :deep(.el-tabs__content) {
+  padding: 0;
+}
+
+.main-tabs :deep(.el-tab-pane) {
+  padding: 20px;
+  background: #fff;
 }
 </style>

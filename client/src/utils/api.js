@@ -48,6 +48,41 @@ export function mergeChunks(fileHash, fileName, totalChunks) {
   });
 }
 
+// ─── 用户管理接口 ─────────────────────────────────────────
+
+/**
+ * 获取用户列表（分页 + 搜索）
+ * @param {Object} params - { username, phone, page, pageSize }
+ */
+export function fetchUsers(params = {}) {
+  return request.get("/users", { params });
+}
+
+/**
+ * 新建用户
+ * @param {Object} data - { username, phone, homeAddress, workLocation }
+ */
+export function createUser(data) {
+  return request.post("/users", data);
+}
+
+/**
+ * 编辑用户
+ * @param {number} id
+ * @param {Object} data - { username, phone, homeAddress, workLocation }
+ */
+export function updateUser(id, data) {
+  return request.put(`/users/${id}`, data);
+}
+
+/**
+ * 删除用户
+ * @param {number} id
+ */
+export function deleteUser(id) {
+  return request.delete(`/users/${id}`);
+}
+
 // ─── 认证拦截器注册（由 auth.js 的 setupAuthInterceptor 调用） ───
 
 let isRefreshing = false;

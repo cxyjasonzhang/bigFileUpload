@@ -8,7 +8,7 @@ const cookieParser = require("cookie-parser");
 const crypto = require("crypto");
 
 // 数据库操作
-const { getAccount, insertAccount, updateAccount, deleteAccount } = require('../db/api')
+const { getUserList, insertUser, updateUser, deleteUser } = require("./db/api");
 
 const app = express();
 const PORT = 3000;
@@ -220,6 +220,131 @@ app.get("/auth/me", authMiddleware, (req, res) => {
       user: { id: req.user.sub, username: req.user.username, name: req.user.name },
     },
   });
+});
+
+// ─── 用户管理接口（需要登录） ──────────────────────────────
+
+/**
+ * 查询用户列表（分页 + 搜索）
+ * GET /users?username=xxx&phone=xxx&page=1&pageSize=10
+ */
+app.get("/users", authMiddleware, async (req, res) => {
+  try {
+    const { username = "", phone = "", page = 1, pageSize = 10 } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const size = [10, 20, 30].includes(parseInt(pageSize, 10))
+      ? parseInt(pageSize, 10)
+      : 10;
+
+    const { list, total } = await getUserList({
+      username: username.trim() || undefined,
+      phone: phone.trim() || undefined,
+      page: pageNum,
+      pageSize: size,
+    });
+
+    const totalPages = Math.ceil(total / size);
+
+    res.json({
+      code: 0,
+      data: { list, total, page: pageNum, pageSize: size, totalPages },
+    });
+  } catch (err) {
+    console.error("查询用户列表失败:", err);
+    res.status(500).json({ code: -1, msg: "服务器内部错误，请稍后重试" });
+  }
+});
+
+/**
+ * 新建用户
+ * POST /users
+ * body: { username, phone, homeAddress, workLocation }
+ */
+app.post("/users", authMiddleware, async (req, res) => {
+  try {
+    const { username, phone, homeAddress = "", workLocation = "" } = req.body;
+
+    if (!username || !username.trim()) {
+      return res.status(400).json({ code: -1, msg: "姓名不能为空" });
+    }
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ code: -1, msg: "手机号不能为空" });
+    }
+    if (!/^1\d{10}$/.test(phone.trim())) {
+      return res.status(400).json({ code: -1, msg: "手机号格式不正确" });
+    }
+
+    await insertUser({
+      username: username.trim(),
+      phone: phone.trim(),
+      homeAddress: homeAddress.trim(),
+      workLocation: workLocation.trim(),
+    });
+
+    res.json({ code: 0, msg: "新建用户成功" });
+  } catch (err) {
+    console.error("新建用户失败:", err);
+    res.status(500).json({ code: -1, msg: "服务器内部错误，请稍后重试" });
+  }
+});
+
+/**
+ * 编辑用户
+ * PUT /users/:id
+ * body: { username, phone, homeAddress, workLocation }
+ */
+app.put("/users/:id", authMiddleware, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id) {
+      return res.status(400).json({ code: -1, msg: "用户ID不合法" });
+    }
+
+    const { username, phone, homeAddress = "", workLocation = "" } = req.body;
+
+    if (!username || !username.trim()) {
+      return res.status(400).json({ code: -1, msg: "姓名不能为空" });
+    }
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ code: -1, msg: "手机号不能为空" });
+    }
+    if (!/^1\d{10}$/.test(phone.trim())) {
+      return res.status(400).json({ code: -1, msg: "手机号格式不正确" });
+    }
+
+    await updateUser(id, {
+      username: username.trim(),
+      phone: phone.trim(),
+      homeAddress: homeAddress.trim(),
+      workLocation: workLocation.trim(),
+    });
+
+    res.json({ code: 0, msg: "编辑用户成功" });
+  } catch (err) {
+    console.error("编辑用户失败:", err);
+    res.status(500).json({ code: -1, msg: "服务器内部错误，请稍后重试" });
+  }
+});
+
+/**
+ * 删除用户
+ * DELETE /users/:id
+ */
+app.delete("/users/:id", authMiddleware, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id) {
+      return res.status(400).json({ code: -1, msg: "用户ID不合法" });
+    }
+
+    await deleteUser(id);
+
+    res.json({ code: 0, msg: "删除用户成功" });
+  } catch (err) {
+    console.error("删除用户失败:", err);
+    res.status(500).json({ code: -1, msg: "服务器内部错误，请稍后重试" });
+  }
 });
 
 // ─── 文件上传接口（需要登录） ──────────────────────────────
