@@ -34,10 +34,10 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { ElMessage } from "element-plus";
-import FileUpload from "./components/FileUpload.vue";
-import Login from "./components/Login.vue";
-import UserManagement from "./components/UserManagement.vue";
-import { authState, logout, initAuth } from "./utils/auth.js";
+import FileUpload from "@/pages/fileUpload/index.vue";
+import Login from "@/pages/login/index.vue";
+import UserManagement from "@/pages/userManagement/index.vue";
+import { authState, logout, initAuth } from "@/utils/auth.js";
 
 const activeTab = ref("upload");
 

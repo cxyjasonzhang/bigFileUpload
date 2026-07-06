@@ -56,7 +56,7 @@
 import { ref, reactive } from "vue";
 import { User, Lock } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
-import { login } from "../utils/auth.js";
+import { login } from "@/utils/auth.js";
 
 const emit = defineEmits(["login-success"]);
 
@@ -89,40 +89,6 @@ async function handleLogin() {
 }
 </script>
 
-<style scoped>
-.login-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 40px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  max-width: 420px;
-  margin: 60px auto 0;
-}
-
-.login-header {
-  text-align: center;
-  margin-bottom: 32px;
-}
-
-.login-header h2 {
-  font-size: 22px;
-  color: #303133;
-  margin-bottom: 8px;
-}
-
-.login-subtitle {
-  font-size: 14px;
-  color: #909399;
-}
-
-.login-btn {
-  width: 100%;
-}
-
-.login-hint {
-  text-align: center;
-  font-size: 12px;
-  color: #c0c4cc;
-  margin-top: 16px;
-}
+<style lang="scss" scoped>
+@use "./index.scss";
 </style>

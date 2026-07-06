@@ -99,8 +99,8 @@
 <script setup>
 import { ref, reactive, onMounted } from "vue";
 import { ElMessage } from "element-plus";
-import { fetchUsers, createUser, updateUser, deleteUser } from "../utils/api.js";
-import UserFormDialog from "./UserFormDialog.vue";
+import { fetchUsers, createUser, updateUser, deleteUser } from "@/utils/api.js";
+import UserFormDialog from "@/components/UserFormDialog.vue";
 
 // 搜索表单
 const searchForm = reactive({
@@ -177,7 +177,7 @@ function handlePageSizeChange(size) {
 // ─── 弹窗相关 ───────────────────────────────────────────
 
 const dialogVisible = ref(false);
-const dialogMode = ref("add"); // 'add' | 'edit'
+const dialogMode = ref("add");
 const currentUser = ref({});
 
 function handleAdd() {
@@ -223,33 +223,6 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
-.user-management {
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-}
-
-.search-bar {
-  margin-bottom: 20px;
-}
-
-.search-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-}
-
-.search-form :deep(.el-form-item) {
-  margin-bottom: 0;
-}
-
-.pagination-wrapper {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid #ebeef5;
-}
+<style lang="scss" scoped>
+@use "./index.scss";
 </style>

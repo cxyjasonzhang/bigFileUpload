@@ -40,7 +40,7 @@ import { ref, reactive, computed, watch } from "vue";
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
-  mode: { type: String, default: "add" }, // 'add' | 'edit'
+  mode: { type: String, default: "add" },
   formData: { type: Object, default: () => ({}) },
 });
 
@@ -71,7 +71,6 @@ const rules = {
   ],
 };
 
-// 监听 formData 变化，回填编辑数据
 watch(
   () => props.formData,
   (val) => {
@@ -85,7 +84,6 @@ watch(
   { immediate: true }
 );
 
-// 弹窗关闭时重置表单
 function handleClosed() {
   form.username = "";
   form.phone = "";

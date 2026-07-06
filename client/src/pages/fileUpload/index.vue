@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="upload-card">
     <!-- 文件选择区域 -->
     <el-upload
@@ -197,7 +197,7 @@
 import { ref, computed, onMounted } from "vue";
 import { UploadFilled } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
-import { UploadQueue, TASK_STATUS } from "../utils/uploadQueue.js";
+import { UploadQueue, TASK_STATUS } from "@/utils/uploadQueue.js";
 
 const queue = new UploadQueue();
 const uploadRef = ref();
@@ -210,11 +210,9 @@ const hasSuccessTasks = computed(() =>
 
 function handleFileChange(uploadFile) {
   const task = queue.addTask(uploadFile.raw);
-  // 如果没有正在上传的任务，自动开始
   if (!queue.currentTaskId) {
     queue.startTask(task.id);
   }
-  // 清空 el-upload 内部文件列表，避免重复
   uploadRef.value?.clearFiles();
 }
 
@@ -226,7 +224,6 @@ function handleResume(taskId) {
   if (queue.hasFile(taskId)) {
     queue.resumeTask(taskId);
   } else {
-    // 需要重新选择文件
     handleSelectFileForResume(taskId);
   }
 }
@@ -263,7 +260,6 @@ function handleResumeFileChange(e) {
     }
   }
 
-  // 清空 input 值，允许重复选择同一文件
   e.target.value = "";
 }
 
@@ -314,11 +310,9 @@ function formatSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
-// 页面加载时恢复任务列表
 onMounted(async () => {
   queue.loadTasks();
 
-  // 同步未完成任务的服务端状态
   const unfinishedTasks = queue.tasks.filter(
     (t) => t.status !== TASK_STATUS.SUCCESS && t.fileHash,
   );
@@ -326,7 +320,6 @@ onMounted(async () => {
     await queue.syncTaskWithServer(task.id);
   }
 
-  // 清除没有 fileHash 且没有 File 对象的任务（无法恢复）
   const staleTasks = queue.tasks.filter(
     (t) => !t.fileHash && !queue.hasFile(t.id),
   );
@@ -334,105 +327,6 @@ onMounted(async () => {
 });
 </script>
 
-<style lang="css" scoped>
-.upload-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 30px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-}
-
-.task-list {
-  margin-top: 24px;
-}
-
-.task-list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #303133;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.task-item {
-  padding: 16px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  border: 1px solid #ebeef5;
-  background: #fafafa;
-  transition: all 0.3s;
-}
-
-.task-item:hover {
-  border-color: #d9ecff;
-  background: #f5f7fa;
-}
-
-.task-item--success {
-  opacity: 0.65;
-  background: #f0f9eb;
-  border-color: #e1f3d8;
-}
-
-.task-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.task-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  overflow: hidden;
-}
-
-.task-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #303133;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 300px;
-}
-
-.task-name--done {
-  text-decoration: line-through;
-  color: #909399;
-}
-
-.task-size {
-  font-size: 12px;
-  color: #909399;
-  flex-shrink: 0;
-}
-
-.task-progress {
-  margin: 10px 0 8px;
-}
-
-.task-progress-text {
-  display: block;
-  margin-top: 4px;
-  font-size: 12px;
-  color: #909399;
-  text-align: right;
-}
-
-.task-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.empty-state {
-  margin-top: 20px;
-}
+<style lang="scss" scoped>
+@use "./index.scss";
 </style>
