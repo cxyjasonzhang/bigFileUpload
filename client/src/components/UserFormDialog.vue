@@ -1,8 +1,8 @@
 <template>
-  <el-dialog
-    :title="dialogTitle"
+  <DraggableDialog
     v-model="dialogVisible"
-    width="480px"
+    :title="dialogTitle"
+    width="500px"
     :close-on-click-modal="false"
     @closed="handleClosed"
   >
@@ -32,11 +32,12 @@
         确定
       </el-button>
     </template>
-  </el-dialog>
+  </DraggableDialog>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch } from "vue";
+import DraggableDialog from "./DraggableDialog.vue";
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
