@@ -7,30 +7,31 @@
       @click="$emit('select', null)"
     >
       <span class="group-name">全部</span>
-      <el-badge :value="totalCount" :max="999" class="group-badge" />
     </div>
 
-    <!-- 分组列表 -->
-    <div
+    <!-- 分组列表：右键唤起悬浮框 -->
+    <el-dropdown
       v-for="group in groups"
       :key="group.id"
-      class="group-item"
-      :class="{ active: activeGroupId === group.id }"
-      @click="$emit('select', group.id)"
+      class="group-dropdown"
+      trigger="contextmenu"
+      placement="bottom-start"
+      @command="(cmd) => handleCommand(cmd, group)"
     >
-      <span class="group-name" :title="group.name">{{ group.name }}</span>
-      <div class="group-actions">
-        <el-badge :value="group.iconCount" :max="999" class="group-badge" />
-        <span class="action-btns" @click.stop>
-          <el-button link size="small" @click="$emit('edit', 'edit', group)">
-            <el-icon><Edit /></el-icon>
-          </el-button>
-          <el-button link size="small" @click="$emit('delete', group)">
-            <el-icon><Delete /></el-icon>
-          </el-button>
-        </span>
+      <div
+        class="group-item"
+        :class="{ active: activeGroupId === group.id }"
+        @click="$emit('select', group.id)"
+      >
+        <span class="group-name" :title="group.name">{{ group.name }}</span>
       </div>
-    </div>
+      <template #dropdown>
+        <el-dropdown-menu>
+          <el-dropdown-item :command="'edit'" :icon="Edit">编辑分组</el-dropdown-item>
+          <el-dropdown-item :command="'delete'" :icon="Delete" divided>删除分组</el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
 
     <!-- 新建分组 -->
     <div class="create-btn" @click="$emit('create', 'create')">
@@ -43,28 +44,43 @@
 <script setup>
 import { Edit, Delete, Plus } from '@element-plus/icons-vue'
 
-defineProps({
+const props = defineProps({
   groups: { type: Array, default: () => [] },
   activeGroupId: { type: [Number, null], default: null },
-  totalCount: { type: Number, default: 0 },
 })
 
-defineEmits(['select', 'edit', 'delete', 'create'])
+const emit = defineEmits(['select', 'edit', 'delete', 'create'])
+
+/**
+ * 右键悬浮框命令分发：编辑 / 删除
+ */
+function handleCommand(cmd, group) {
+  if (cmd === 'edit') emit('edit', 'edit', group)
+  else if (cmd === 'delete') emit('delete', group)
+}
 </script>
 
 <style lang="scss" scoped>
 .icon-group-list {
-  padding: 8px 0;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.group-dropdown {
+  display: block;
 }
 
 .group-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
+  padding: 9px 12px;
   cursor: pointer;
-  transition: background 0.2s;
+  font-size: 14px;
+  color: var(--el-text-color-regular);
   border-left: 3px solid transparent;
+  transition: background-color 0.18s ease, color 0.18s ease;
 
   &:hover {
     background: var(--el-fill-color-light);
@@ -72,9 +88,9 @@ defineEmits(['select', 'edit', 'delete', 'create'])
 
   &.active {
     background: var(--el-color-primary-light-9);
-    border-left-color: var(--el-color-primary);
     color: var(--el-color-primary);
     font-weight: 500;
+    border-left-color: var(--el-color-primary);
   }
 
   .group-name {
@@ -82,41 +98,21 @@ defineEmits(['select', 'edit', 'delete', 'create'])
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 14px;
   }
-
-  .group-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
-
-    .action-btns {
-      display: none;
-    }
-  }
-
-  &:hover .group-actions .action-btns {
-    display: inline-flex;
-  }
-}
-
-.group-badge {
-  flex-shrink: 0;
 }
 
 .create-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 10px 16px;
-  margin: 8px 12px;
+  padding: 9px 12px;
+  margin-top: 6px;
   cursor: pointer;
   color: var(--el-color-primary);
   font-size: 14px;
   border: 1px dashed var(--el-color-primary-light-5);
-  border-radius: 6px;
-  justify-content: center;
+  border-radius: 8px;
   transition: background 0.2s;
 
   &:hover {

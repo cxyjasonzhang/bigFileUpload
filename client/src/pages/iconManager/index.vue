@@ -5,7 +5,6 @@
       <IconGroupList
         :groups="groups"
         :active-group-id="activeGroupId"
-        :total-count="totalIcons"
         @select="handleGroupSelect"
         @edit="openGroupDialog"
         @delete="handleDeleteGroup"
@@ -35,7 +34,6 @@
     <GroupFormDialog
       ref="groupDialogRef"
       :is-edit="groupDialogMode === 'edit'"
-      :group-data="currentGroup"
       @confirm="handleGroupConfirm"
     />
 
@@ -71,7 +69,6 @@ const loading = ref(false)
 const page = ref(1)
 const pageSize = ref(24)
 const total = ref(0)
-const totalIcons = ref(0)
 const activeGroupId = ref(null)
 const keyword = ref('')
 
@@ -91,8 +88,6 @@ async function loadGroups() {
   try {
     const res = await getIconGroups()
     groups.value = res.data?.data || []
-    // 统计总图标数
-    totalIcons.value = groups.value.reduce((sum, g) => sum + (g.iconCount || 0), 0)
   } catch {
     ElMessage.error('加载分组列表失败')
   }
@@ -130,7 +125,7 @@ function handleGroupSelect(groupId) {
 function openGroupDialog(mode, group) {
   groupDialogMode.value = mode
   currentGroup.value = group || null
-  groupDialogRef.value?.open()
+  groupDialogRef.value?.open(mode === 'edit' ? group : null)
 }
 
 async function handleGroupConfirm(data) {

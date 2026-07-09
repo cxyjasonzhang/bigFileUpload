@@ -40,16 +40,53 @@ export async function login(username, password) {
   return res.data;
 }
 
+// ─── 刷新并发锁：保证任意时刻只有一个 /auth/refresh 真正发出 ──
+// 页面刷新时 initAuth() 与多个业务请求的 401 拦截会同时触发刷新，
+// 若并发发出多个 /auth/refresh，服务端的 refresh token 重用检测会把
+// 同一旧 token 的第二个请求判为"凭证异常" → 登录态丢失。
+let isRefreshing = false;
+let refreshSubscribers = [];
+
+function subscribeRefresh(cb) {
+  refreshSubscribers.push(cb);
+}
+
 /**
- * 刷新 access token（浏览器自动带 refresh_token Cookie）
+ * 真正发起一次刷新请求
  */
-export async function refreshAccessToken() {
+async function doRefreshInternal() {
   const { data: res } = await request.post("/auth/refresh");
   if (res.code !== 0) {
-    throw new Error("刷新失败");
+    throw new Error(res.msg || "刷新失败");
   }
   setAccessToken(res.data.access_token);
   return res.data.access_token;
+}
+
+/**
+ * 刷新 access token（浏览器自动带 refresh_token Cookie）
+ * 并发调用时复用同一次请求结果，避免服务端 reuse 检测误杀
+ */
+export async function refreshAccessToken() {
+  if (isRefreshing) {
+    // 已有刷新在飞，排队等结果即可
+    return new Promise((resolve, reject) => {
+      subscribeRefresh({ resolve, reject });
+    });
+  }
+
+  isRefreshing = true;
+  try {
+    const token = await doRefreshInternal();
+    refreshSubscribers.forEach((s) => s.resolve(token));
+    return token;
+  } catch (err) {
+    refreshSubscribers.forEach((s) => s.reject(err));
+    throw err;
+  } finally {
+    refreshSubscribers = [];
+    isRefreshing = false;
+  }
 }
 
 /**

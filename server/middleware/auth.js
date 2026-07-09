@@ -51,7 +51,7 @@ function setRefreshTokenCookie(res, token) {
     httpOnly: true,
     secure: false,          // Demo 用 HTTP，生产必须是 true（仅 HTTPS）
     sameSite: "lax",
-    path: "/auth",          // 匹配前端 Vite 代理后的请求路径 /auth/*
+    path: "/",              // 必须匹配浏览器侧路径（Vite 代理后是 /api/auth/*）
     maxAge: REFRESH_TOKEN_MAX_AGE,
   })
 }
@@ -60,7 +60,7 @@ function setRefreshTokenCookie(res, token) {
  * 清除 refresh_token Cookie
  */
 function clearRefreshTokenCookie(res) {
-  res.clearCookie("refresh_token", { path: "/auth" })
+  res.clearCookie("refresh_token", { path: "/" })
 }
 
 /**

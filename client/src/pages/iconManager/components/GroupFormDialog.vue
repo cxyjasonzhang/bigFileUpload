@@ -46,12 +46,11 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, nextTick } from 'vue'
 import DraggableDialog from '@/components/DraggableDialog.vue'
 
 const props = defineProps({
   isEdit: { type: Boolean, default: false },
-  groupData: { type: Object, default: null },
 })
 
 const emit = defineEmits(['confirm'])
@@ -78,19 +77,20 @@ const rules = {
 
 /**
  * 打开弹窗，初始化表单数据
+ * @param {Object|null} data 编辑时传入分组数据，新建时传 null
  */
-function open() {
-  if (props.isEdit && props.groupData) {
-    form.name = props.groupData.name || ''
-    form.slug = props.groupData.slug || ''
-    form.description = props.groupData.description || ''
+function open(data) {
+  if (data) {
+    form.name = data.name || ''
+    form.slug = data.slug || ''
+    form.description = data.description || ''
   } else {
     form.name = ''
     form.slug = ''
     form.description = ''
   }
-  // 重置表单校验状态
-  formRef.value?.resetFields()
+  // 仅清除校验状态，避免 resetFields 把已回显的字段值重置为空
+  nextTick(() => formRef.value?.clearValidate())
   visible.value = true
 }
 
