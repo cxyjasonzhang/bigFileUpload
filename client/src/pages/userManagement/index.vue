@@ -29,6 +29,7 @@
           <el-button type="success" @click="handleAdd">
             新增用户
           </el-button>
+          <SvgIcon name="ai/a-24" color="skyblue" :size="104" />
         </el-form-item>
       </el-form>
     </div>
@@ -101,6 +102,7 @@ import { ref, reactive, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 import { fetchUsers, createUser, updateUser, deleteUser } from "@/utils/api.js";
 import UserFormDialog from "@/components/UserFormDialog.vue";
+import SvgIcon from "@/components/SvgIcon.vue";
 
 // 搜索表单
 const searchForm = reactive({

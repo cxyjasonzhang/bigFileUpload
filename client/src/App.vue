@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <h1>大文件上传 &amp; 用户管理</h1>
+    <h1>大文件上传 &amp; 图标管理</h1>
 
     <!-- 未登录 → 登录页 -->
     <Login
@@ -26,6 +26,9 @@
         <el-tab-pane label="👥 用户管理" name="users">
           <UserManagement />
         </el-tab-pane>
+        <el-tab-pane label="🎨 图标管理" name="icons">
+          <IconManager />
+        </el-tab-pane>
       </el-tabs>
     </template>
   </div>
@@ -37,7 +40,9 @@ import { ElMessage } from "element-plus";
 import FileUpload from "@/pages/fileUpload/index.vue";
 import Login from "@/pages/login/index.vue";
 import UserManagement from "@/pages/userManagement/index.vue";
+import IconManager from "@/pages/iconManager/index.vue";
 import { authState, logout, initAuth } from "@/utils/auth.js";
+import { checkVersion as checkIconCacheVersion } from "@/utils/iconCache";
 
 const activeTab = ref("upload");
 
@@ -52,6 +57,8 @@ async function handleLogout() {
 
 onMounted(async () => {
   await initAuth();
+  // 三级缓存 B 方案：启动比对图标版本号，不一致则清空本地缓存
+  await checkIconCacheVersion();
 });
 </script>
 
@@ -104,6 +111,7 @@ h1 {
 
 .main-tabs :deep(.el-tabs__content) {
   padding: 0;
+  min-height: 550px;
 }
 
 .main-tabs :deep(.el-tab-pane) {

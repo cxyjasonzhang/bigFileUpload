@@ -1,36 +1,23 @@
 <template>
-  <el-dialog
-    ref="dialogRef"
-    :model-value="modelValue"
-    :show-close="false"
-    @update:model-value="handleVisibleChange"
-    @opened="handleOpened"
-    @closed="handleClosed"
-    v-bind="$attrs"
-  >
+  <el-dialog ref="dialogRef" :model-value="modelValue" :show-close="false" @update:model-value="handleVisibleChange"
+    @opened="handleOpened" @closed="handleClosed" v-bind="$attrs">
     <template #header>
-      <div
-        class="draggable-dialog-header"
-        :class="{ 'is-draggable': draggable && !isFullscreen }"
-        @pointerdown="onPointerDown"
-      >
+      <div class="draggable-dialog-header" :class="{ 'is-draggable': draggable && !isFullscreen }"
+        @pointerdown="onPointerDown">
         <span class="dialog-title">{{ title }}</span>
         <div class="header-actions">
-          <el-button
-            v-if="fullscreenable"
-            :icon="isFullscreen ? CopyDocument : FullScreen"
-            circle
-            size="small"
-            class="action-btn"
-            @click.stop="toggleFullscreen"
-          />
-          <el-button
-            :icon="Close"
-            circle
-            size="small"
-            class="action-btn close-btn"
-            @click.stop="closeDialog"
-          />
+          <!-- <el-button v-if="fullscreenable" :icon="isFullscreen ? <SvgIcon :name="reduceIcon" color="skyblue"
+            :size="104" /> : FullScreen"
+          circle
+          size="small"
+          class="action-btn"
+          @click.stop="toggleFullscreen"
+          /> -->
+          <div class="toggle-btn" @click.stop="toggleFullscreen">
+            <SvgIcon v-if="!isFullscreen"  name="ai/expand" color="#999" :size="18" />
+            <SvgIcon v-else :name="reduceIcon" color="#999" :size="18" />
+          </div>
+          <el-button :icon="Close" circle size="small" class="action-btn close-btn" @click.stop="closeDialog" />
         </div>
       </div>
     </template>
@@ -46,6 +33,7 @@
 <script setup>
 import { ref, watch, nextTick, onUnmounted } from 'vue'
 import { FullScreen, CopyDocument, Close } from '@element-plus/icons-vue'
+import SvgIcon from '@/components/SvgIcon.vue'
 
 // ==================== Props ====================
 const props = defineProps({
@@ -61,6 +49,8 @@ const emit = defineEmits(['update:modelValue', 'fullscreen-change'])
 // ==================== Refs & State ====================
 const dialogRef = ref(null)
 const isFullscreen = ref(false)
+
+const reduceIcon = ref('ai/reduce')
 
 // Drag state (plain variables — no reactivity needed for perf)
 let dragX = 0
@@ -395,7 +385,6 @@ onUnmounted(() => {
 </style>
 
 <style lang="scss">
-
 .is-fullscreen-overlay {
   display: block !important;
   position: fixed !important;
@@ -429,6 +418,14 @@ onUnmounted(() => {
   .el-dialog__footer {
     flex-shrink: 0;
     padding: 12px 20px;
+  }
+}
+
+.toggle-btn {
+  border-radius: 50%;
+
+  &:hover {
+    background-color: aquamarine;
   }
 }
 

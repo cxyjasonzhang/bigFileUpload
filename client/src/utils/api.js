@@ -83,6 +83,112 @@ export function deleteUser(id) {
   return request.delete(`/users/${id}`);
 }
 
+// ─── 图标管理接口 ─────────────────────────────────────────
+
+/**
+ * 获取图标分组列表
+ */
+export function getIconGroups() {
+  return request.get("/icon-groups")
+}
+
+/**
+ * 创建图标分组
+ * @param {Object} data - { name, slug, description, sortOrder }
+ */
+export function createIconGroup(data) {
+  return request.post("/icon-groups", data)
+}
+
+/**
+ * 更新图标分组
+ * @param {number} id
+ * @param {Object} data - { name, slug, description, sortOrder }
+ */
+export function updateIconGroup(id, data) {
+  return request.put(`/icon-groups/${id}`, data)
+}
+
+/**
+ * 删除图标分组
+ * @param {number} id
+ */
+export function deleteIconGroup(id) {
+  return request.delete(`/icon-groups/${id}`)
+}
+
+/**
+ * 获取图标列表（分页 + 搜索 + 分组过滤）
+ * @param {Object} params - { groupId, keyword, page, pageSize }
+ */
+export function getIcons(params = {}) {
+  return request.get("/icons", { params })
+}
+
+/**
+ * 解析图标（SvgIcon 组件使用）
+ * @param {string} name - 格式 "分组slug/图标名"
+ */
+export function resolveIcon(name) {
+  return request.get("/icons/resolve", { params: { name } })
+}
+
+/**
+ * 获取图标版本号（三级缓存 B 方案：启动比对缓存失效）
+ */
+export function getIconVersion() {
+  return request.get("/icons/version")
+}
+
+/**
+ * 获取分组下所有图标名称（重复检测用）
+ * @param {number} groupId
+ */
+export function getIconNames(groupId) {
+  return request.get("/icons/names", { params: { groupId } })
+}
+
+/**
+ * 新增单个图标
+ * @param {Object} data - { name, groupId, description, svgContent }
+ */
+export function createIcon(data) {
+  return request.post("/icons", data)
+}
+
+/**
+ * 批量导入图标
+ * @param {Object} data - { groupId, icons: [{name, description, svgContent}] }
+ */
+export function batchCreateIcons(data) {
+  return request.post("/icons/batch", data)
+}
+
+/**
+ * 更新图标
+ * @param {number} id
+ * @param {Object} data - { name, groupId, description, svgContent }
+ */
+export function updateIcon(id, data) {
+  return request.put(`/icons/${id}`, data)
+}
+
+/**
+ * 删除图标
+ * @param {number} id
+ */
+export function deleteIcon(id) {
+  return request.delete(`/icons/${id}`)
+}
+
+/**
+ * 批量删除图标
+ * @param {number[]} ids
+ */
+export function batchDeleteIcons(ids) {
+  return request.delete("/icons/batch", { data: { ids } })
+}
+
 // ─── 认证拦截器注册（由 auth.js 的 setupAuthInterceptor 调用） ───
 
 let isRefreshing = false;
