@@ -7,7 +7,7 @@
   />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { get as getCachedIcon } from '@/utils/iconCache'
 
@@ -15,14 +15,20 @@ import { get as getCachedIcon } from '@/utils/iconCache'
  * SvgIcon - SVG 图标渲染组件
  * 使用方式：<SvgIcon name="object/history" size="20" color="#1890ff" />
  */
-const props = defineProps({
-  /** 图标引用名，格式：分组slug/图标名 */
-  name: { type: String, required: true },
-  /** 图标尺寸，数字默认px，也可传字符串如 '1.5em' */
-  size: { type: [Number, String], default: 24 },
-  /** 图标填充色 */
-  color: { type: String, default: 'currentColor' },
-})
+const props = withDefaults(
+  defineProps<{
+    /** 图标引用名，格式：分组slug/图标名 */
+    name: string;
+    /** 图标尺寸，数字默认px，也可传字符串如 '1.5em' */
+    size?: number | string;
+    /** 图标填充色 */
+    color?: string;
+  }>(),
+  {
+    size: 24,
+    color: 'currentColor',
+  },
+)
 
 const svgContent = ref('')
 

@@ -35,26 +35,36 @@
   </DraggableDialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, computed, watch } from "vue";
+import { type FormInstance } from "element-plus";
 import DraggableDialog from "./DraggableDialog.vue";
 
-const props = defineProps({
-  visible: { type: Boolean, default: false },
-  mode: { type: String, default: "add" },
-  formData: { type: Object, default: () => ({}) },
-});
+const props = withDefaults(
+  defineProps<{
+    visible: boolean;
+    mode?: string;
+    formData?: any;
+  }>(),
+  {
+    mode: "add",
+    formData: () => ({}),
+  },
+);
 
-const emit = defineEmits(["update:visible", "submit"]);
+const emit = defineEmits<{
+  (e: "update:visible", val: boolean): void;
+  (e: "submit", payload: { data: Record<string, unknown>; done: () => void; fail: () => void }): void;
+}>();
 
 const dialogVisible = computed({
   get: () => props.visible,
-  set: (val) => emit("update:visible", val),
+  set: (val: boolean) => emit("update:visible", val),
 });
 
 const dialogTitle = computed(() => (props.mode === "edit" ? "编辑用户" : "新建用户"));
 
-const formRef = ref(null);
+const formRef = ref<FormInstance | null>(null);
 const submitting = ref(false);
 
 const form = reactive({

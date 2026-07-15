@@ -34,14 +34,14 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 import FileUpload from "@/pages/fileUpload/index.vue";
 import Login from "@/pages/login/index.vue";
 import UserManagement from "@/pages/userManagement/index.vue";
 import IconManager from "@/pages/iconManager/index.vue";
-import { authState, logout, initAuth } from "@/utils/auth.js";
+import { authState, logout, initAuth } from "@/utils/auth";
 import { checkVersion as checkIconCacheVersion } from "@/utils/iconCache";
 
 const activeTab = ref("upload");

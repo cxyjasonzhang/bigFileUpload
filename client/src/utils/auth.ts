@@ -1,22 +1,33 @@
+// auth.ts - 登录态、token 管理、401 刷新拦截
 import { reactive } from "vue";
-import { request, setupAuthInterceptor } from "./api.js";
+import {
+  request,
+  setupAuthInterceptor,
+  type ApiResponse,
+  type User,
+} from "./api";
 
 // ─── access token 只存在内存中（不落盘） ──────────────────
-let accessToken = null;
+let accessToken: string | null = null;
 
 // 当前用户信息（响应式）
-export const authState = reactive({
+export interface AuthState {
+  user: User | null;
+  isLoggedIn: boolean;
+}
+
+export const authState = reactive<AuthState>({
   user: null,
   isLoggedIn: false,
 });
 
 // ─── Token 读写（闭包保护，外部只有 get/set） ──────────────
 
-export function getAccessToken() {
+export function getAccessToken(): string | null {
   return accessToken;
 }
 
-function setAccessToken(token) {
+function setAccessToken(token: string) {
   accessToken = token;
 }
 
@@ -26,12 +37,23 @@ function clearAccessToken() {
 
 // ─── 鉴权 API ─────────────────────────────────────────────
 
+export interface LoginResult {
+  access_token: string;
+  user: User;
+}
+
 /**
  * 登录
  * 服务端通过 HttpOnly Cookie 下发 refresh_token
  */
-export async function login(username, password) {
-  const { data: res } = await request.post("/auth/login", { username, password });
+export async function login(
+  username: string,
+  password: string,
+): Promise<LoginResult> {
+  const { data: res } = await request.post<ApiResponse<LoginResult>>(
+    "/auth/login",
+    { username, password },
+  );
   if (res.code !== 0) throw new Error(res.msg);
 
   setAccessToken(res.data.access_token);
@@ -40,22 +62,25 @@ export async function login(username, password) {
   return res.data;
 }
 
-// ─── 刷新并发锁：保证任意时刻只有一个 /auth/refresh 真正发出 ──
-// 页面刷新时 initAuth() 与多个业务请求的 401 拦截会同时触发刷新，
-// 若并发发出多个 /auth/refresh，服务端的 refresh token 重用检测会把
-// 同一旧 token 的第二个请求判为"凭证异常" → 登录态丢失。
+// ─── 刷新并发锁 ──────────────────────────────────────────
 let isRefreshing = false;
-let refreshSubscribers = [];
+let refreshSubscribers: Array<{
+  resolve: (token: string) => void;
+  reject: (err: unknown) => void;
+}> = [];
 
-function subscribeRefresh(cb) {
+function subscribeRefresh(cb: {
+  resolve: (token: string) => void;
+  reject: (err: unknown) => void;
+}) {
   refreshSubscribers.push(cb);
 }
 
-/**
- * 真正发起一次刷新请求
- */
-async function doRefreshInternal() {
-  const { data: res } = await request.post("/auth/refresh");
+/** 真正发起一次刷新请求 */
+async function doRefreshInternal(): Promise<string> {
+  const { data: res } = await request.post<ApiResponse<LoginResult>>(
+    "/auth/refresh",
+  );
   if (res.code !== 0) {
     throw new Error(res.msg || "刷新失败");
   }
@@ -67,10 +92,10 @@ async function doRefreshInternal() {
  * 刷新 access token（浏览器自动带 refresh_token Cookie）
  * 并发调用时复用同一次请求结果，避免服务端 reuse 检测误杀
  */
-export async function refreshAccessToken() {
+export async function refreshAccessToken(): Promise<string> {
   if (isRefreshing) {
     // 已有刷新在飞，排队等结果即可
-    return new Promise((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
       subscribeRefresh({ resolve, reject });
     });
   }
@@ -89,10 +114,8 @@ export async function refreshAccessToken() {
   }
 }
 
-/**
- * 登出
- */
-export async function logout() {
+/** 登出 */
+export async function logout(): Promise<void> {
   try {
     await request.post("/auth/logout");
   } catch {
@@ -107,12 +130,15 @@ export async function logout() {
  * 初始化认证：尝试刷新 token 恢复登录态
  * 返回 true 表示恢复成功，false 表示需要重新登录
  */
-export async function initAuth() {
+export async function initAuth(): Promise<boolean> {
   try {
     await refreshAccessToken();
-    const { data: res } = await request.get("/auth/me", {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    const { data: res } = await request.get<ApiResponse<{ user: User }>>(
+      "/auth/me",
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
     if (res.code === 0 && res.data.user) {
       authState.user = res.data.user;
       authState.isLoggedIn = true;
@@ -127,10 +153,8 @@ export async function initAuth() {
   return false;
 }
 
-/**
- * 安装认证拦截器（在 main.js 中调用一次）
- */
-export function setupAuth() {
+/** 安装认证拦截器（在 main.ts 中调用一次） */
+export function setupAuth(): void {
   setupAuthInterceptor({
     getToken: getAccessToken,
     doRefresh: refreshAccessToken,

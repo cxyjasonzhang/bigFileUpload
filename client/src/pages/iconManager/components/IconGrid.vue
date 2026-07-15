@@ -10,7 +10,7 @@
         class="search-input"
         @input="onSearch"
       />
-      <el-button type="primary" :icon="Upload" @click="$emit('import', 'import')">
+      <el-button type="primary" :icon="Upload" @click="$emit('import')">
         导入图标
       </el-button>
     </div>
@@ -60,22 +60,30 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { Search, Upload, Edit, Delete, Loading, CopyDocument, Download } from '@element-plus/icons-vue'
 
-defineProps({
-  icons: { type: Array, default: () => [] },
-  loading: { type: Boolean, default: false },
-  page: { type: Number, default: 1 },
-  pageSize: { type: Number, default: 24 },
-  total: { type: Number, default: 0 },
-})
+const props = defineProps<{
+  icons: any[]
+  loading: boolean
+  page: number
+  pageSize: number
+  total: number
+}>()
 
-const emit = defineEmits(['search', 'page-change', 'import', 'edit', 'delete', 'copy', 'download'])
+const emit = defineEmits<{
+  (e: 'search', val: string): void
+  (e: 'page-change', val: number): void
+  (e: 'import'): void
+  (e: 'edit', mode: string, icon: any): void
+  (e: 'delete', icon: any): void
+  (e: 'copy', icon: any): void
+  (e: 'download', icon: any): void
+}>()
 
 const searchText = ref('')
-let searchTimer = null
+let searchTimer: any = null
 
 function onSearch() {
   clearTimeout(searchTimer)

@@ -22,26 +22,38 @@
   </el-dialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, nextTick, onUnmounted } from 'vue'
 import { Close } from '@element-plus/icons-vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 
 // ==================== Props ====================
-const props = defineProps({
-  modelValue: { type: Boolean, default: false },
-  title: { type: String, default: '' },
-  draggable: { type: Boolean, default: true },
-  fullscreenable: { type: Boolean, default: true },
-  // 弹窗距离顶部的距离，支持 CSS 单位（如 15vh、100px），由父组件自定义
-  top: { type: String, default: '22vh' },
-})
+const props = withDefaults(
+  defineProps<{
+    modelValue: boolean
+    title?: string
+    draggable?: boolean
+    fullscreenable?: boolean
+    // 弹窗距离顶部的距离，支持 CSS 单位（如 15vh、100px），由父组件自定义
+    top?: string
+  }>(),
+  {
+    title: '',
+    draggable: true,
+    fullscreenable: true,
+    top: '22vh',
+  },
+)
 
 // ==================== Emits ====================
-const emit = defineEmits(['update:modelValue', 'fullscreen-change'])
+const emit = defineEmits<{
+  (e: 'update:modelValue', val: boolean): void
+  (e: 'fullscreen-change', val: boolean): void
+}>()
 
 // ==================== Refs & State ====================
-const dialogRef = ref(null)
+// TODO: 收紧类型 - dialogRef 内部实例用 any 过渡
+const dialogRef = ref<any>(null)
 const isFullscreen = ref(false)
 
 // Drag state (plain variables — no reactivity needed for perf)
@@ -52,8 +64,8 @@ let startMouseY = 0
 let startDragX = 0
 let startDragY = 0
 let isDragging = false
-let rafId = null
-let pendingDelta = null
+let rafId: number | null = null
+let pendingDelta: { x: number; y: number } | null = null
 
 // Pre-computed boundary limits per drag session (based on original centered position)
 let dragMinX = -Infinity
@@ -62,9 +74,9 @@ let dragMinY = -Infinity
 let dragMaxY = Infinity
 
 // Cleanup-bound handlers
-let boundOnMove = null
-let boundOnUp = null
-let boundOnResize = null
+let boundOnMove: any = null
+let boundOnUp: any = null
+let boundOnResize: any = null
 
 // ==================== DOM Access ====================
 /**
@@ -148,7 +160,7 @@ function clampToBounds() {
 }
 
 // ==================== Drag: Pointer Events ====================
-function onPointerDown(e) {
+function onPointerDown(e: PointerEvent) {
   if (!props.draggable || isFullscreen.value) return
   if (e.button !== 0) return
 
@@ -168,7 +180,7 @@ function onPointerDown(e) {
   document.body.style.userSelect = 'none'
 }
 
-function onPointerMove(e) {
+function onPointerMove(e: PointerEvent) {
   if (!isDragging) return
 
   pendingDelta = {
@@ -291,7 +303,7 @@ function handleClosed() {
   }
 }
 
-function handleVisibleChange(val) {
+function handleVisibleChange(val: boolean) {
   emit('update:modelValue', val)
 }
 

@@ -88,7 +88,7 @@
             class="file-name"
             contenteditable="true"
             @blur="updateIconName(index, $event)"
-            @keydown.enter.prevent="$event.target.blur()"
+            @keydown.enter.prevent="($event.target as HTMLElement)?.blur()"
           >{{ file.iconName }}</span>
           <span v-if="file.duplicate" class="duplicate-warn">
             <el-icon><WarningFilled /></el-icon> 已存在
@@ -129,37 +129,47 @@
   </DraggableDialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, type FormInstance } from 'element-plus'
 import { UploadFilled, Document, WarningFilled, CircleCheckFilled, Close } from '@element-plus/icons-vue'
 import DraggableDialog from '@/components/DraggableDialog.vue'
-import { updateIcon, batchCreateIcons, getIconNames } from '@/utils/api'
+import { updateIcon, batchCreateIcons, getIconNames, type IconInput } from '@/utils/api'
 
-const props = defineProps({
-  isEdit: { type: Boolean, default: false },
-  iconData: { type: Object, default: null },
-  groups: { type: Array, default: () => [] },
-  defaultGroupId: { type: Number, default: undefined },
-})
+const props = withDefaults(
+  defineProps<{
+    isEdit?: boolean
+    iconData?: any
+    groups?: any[]
+    defaultGroupId?: number
+  }>(),
+  {
+    isEdit: false,
+    iconData: null,
+    groups: () => [],
+    defaultGroupId: undefined,
+  },
+)
 
-const emit = defineEmits(['confirm'])
+const emit = defineEmits<{
+  (e: 'confirm'): void
+}>()
 
 const visible = ref(false)
-const fileInputRef = ref(null)
-const editFormRef = ref(null)
+const fileInputRef = ref<any>(null)
+const editFormRef = ref<FormInstance | null>(null)
 const submitting = ref(false)
 const isDragover = ref(false)
-const targetGroupId = ref(props.defaultGroupId)
+const targetGroupId = ref<any>(props.defaultGroupId)
 
 // 文件列表
-const fileList = reactive([])
+const fileList = reactive<any[]>([])
 const previewSvg = ref('')
 const previewName = ref('')
 
 // 编辑表单
 const editForm = reactive({
-  groupId: null,
+  groupId: null as number | null,
   name: '',
   description: '',
   svgContent: '',
@@ -180,8 +190,9 @@ const editRules = {
 // 去色 / 去边距 状态
 const isDesaturated = ref(false)
 const isTrimmed = ref(false)
-const desaturateSnapshot = ref(null)
-const trimMarginSnapshot = ref(null)
+// TODO: 收紧类型 - 快照用 any 过渡
+const desaturateSnapshot = ref<any>(null)
+const trimMarginSnapshot = ref<any>(null)
 
 // 打开弹窗时初始化数据
 watch(visible, (val) => {
@@ -221,26 +232,28 @@ function triggerFileInput() {
   fileInputRef.value?.click()
 }
 
-function handleFileSelect(e) {
-  const files = Array.from(e.target.files)
+function handleFileSelect(e: any) {
+  const input = e.target as HTMLInputElement
+  const files = Array.from(input.files || [])
   processFiles(files)
-  e.target.value = ''
+  input.value = ''
 }
 
-function handleDrop(e) {
+function handleDrop(e: DragEvent) {
   isDragover.value = false
-  const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.svg'))
+  if (!e.dataTransfer) return
+  const files = Array.from(e.dataTransfer.files).filter((f: File) => f.name.endsWith('.svg'))
   processFiles(files)
 }
 
-async function processFiles(files) {
+async function processFiles(files: File[]) {
   if (!targetGroupId.value) {
     ElMessage.warning('请先选择所属分组')
     return
   }
 
   // 获取已有图标名用于重复检测
-  let existNames = []
+  let existNames: string[] = []
   try {
     const res = await getIconNames(targetGroupId.value)
     existNames = res.data?.data || []
@@ -291,17 +304,18 @@ async function processFiles(files) {
   }
 }
 
-function readFileAsText(file) {
+function readFileAsText(file: File): Promise<string> {
   return new Promise((resolve) => {
     const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
     reader.onerror = () => resolve('')
     reader.readAsText(file)
   })
 }
 
-function updateIconName(index, e) {
-  fileList[index].iconName = e.target.textContent.trim() || fileList[index].iconName
+function updateIconName(index: number, e: FocusEvent) {
+  const target = e.target as HTMLElement | null
+  fileList[index].iconName = (target?.textContent?.trim() || '') || fileList[index].iconName
 }
 
 function removeFile(index) {
@@ -348,7 +362,7 @@ function trimSvgMargin(svgString) {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
   for (const child of svg.children) {
     try {
-      const bbox = child.getBBox()
+      const bbox = (child as SVGGraphicsElement).getBBox()
       minX = Math.min(minX, bbox.x)
       minY = Math.min(minY, bbox.y)
       maxX = Math.max(maxX, bbox.x + bbox.width)
@@ -413,9 +427,11 @@ async function handleConfirm() {
   try {
     if (props.isEdit) {
       // 编辑模式
-      const valid = await editFormRef.value.validate().catch(() => false)
+      const valid = editFormRef.value
+        ? await editFormRef.value.validate().catch(() => false)
+        : false
       if (!valid) { submitting.value = false; return }
-      await updateIcon(props.iconData.id, { ...editForm })
+      await updateIcon(props.iconData.id, { ...editForm } as IconInput)
       ElMessage.success('图标更新成功')
     } else {
       // 批量导入
@@ -431,12 +447,12 @@ async function handleConfirm() {
           name: f.iconName,
           description: '',
           svgContent: f.svgContent,
-        })),
+        })) as IconInput[],
       })
       ElMessage.success(`成功导入 ${fileList.length} 个图标`)
     }
     emit('confirm')
-  } catch (err) {
+  } catch (err: any) {
     const msg = err.response?.data?.msg || '操作失败'
     ElMessage.error(msg)
   } finally {

@@ -193,16 +193,16 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { UploadFilled } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
-import { UploadQueue, TASK_STATUS } from "@/utils/uploadQueue.js";
+import { UploadQueue, TASK_STATUS } from "@/utils/uploadQueue";
 
 const queue = new UploadQueue();
-const uploadRef = ref();
-const resumeFileInput = ref();
-const pendingResumeTaskId = ref(null);
+const uploadRef = ref<any>(null);
+const resumeFileInput = ref<any>(null);
+const pendingResumeTaskId = ref<string | null>(null);
 
 const hasSuccessTasks = computed(() =>
   queue.tasks.some((t) => t.status === TASK_STATUS.SUCCESS),
@@ -255,7 +255,7 @@ function handleResumeFileChange(e) {
     queue.resumeTask(taskId, file);
     ElMessage.success("文件已选择，开始恢复上传");
   } catch (err) {
-    if (err.message === "NO_FILE") {
+    if ((err as Error).message === "NO_FILE") {
       ElMessage.error("文件选择失败，请重试");
     }
   }

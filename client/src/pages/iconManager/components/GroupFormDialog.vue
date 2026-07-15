@@ -45,18 +45,26 @@
   </DraggableDialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, nextTick } from 'vue'
+import { type FormInstance } from 'element-plus'
 import DraggableDialog from '@/components/DraggableDialog.vue'
 
-const props = defineProps({
-  isEdit: { type: Boolean, default: false },
-})
+const props = withDefaults(
+  defineProps<{
+    isEdit?: boolean
+  }>(),
+  {
+    isEdit: false,
+  },
+)
 
-const emit = defineEmits(['confirm'])
+const emit = defineEmits<{
+  (e: 'confirm', data: Record<string, unknown>): void
+}>()
 
 const visible = ref(false)
-const formRef = ref(null)
+const formRef = ref<FormInstance | null>(null)
 const submitting = ref(false)
 
 const form = reactive({
@@ -99,7 +107,7 @@ function close() {
 }
 
 async function handleConfirm() {
-  const valid = await formRef.value.validate().catch(() => false)
+  const valid = formRef.value ? await formRef.value.validate().catch(() => false) : false
   if (!valid) return
 
   submitting.value = true

@@ -49,7 +49,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -63,8 +63,8 @@ import GroupFormDialog from './components/GroupFormDialog.vue'
 import IconFormDialog from './components/IconFormDialog.vue'
 
 // ─── 状态 ────────────────────────────────────────────
-const groups = ref([])
-const icons = ref([])
+const groups = ref<any[]>([])
+const icons = ref<any[]>([])
 const loading = ref(false)
 const page = ref(1)
 const pageSize = ref(24)
@@ -73,13 +73,13 @@ const activeGroupId = ref(null)
 const keyword = ref('')
 
 // 弹窗状态
-const groupDialogRef = ref(null)
+const groupDialogRef = ref<any>(null)
 const groupDialogMode = ref('create')
-const currentGroup = ref(null)
+const currentGroup = ref<any>(null)
 
-const iconDialogRef = ref(null)
+const iconDialogRef = ref<any>(null)
 const iconDialogMode = ref('create')
-const currentIcon = ref(null)
+const currentIcon = ref<any>(null)
 
 // ─── 数据加载 ─────────────────────────────────────────
 
@@ -97,7 +97,12 @@ async function loadGroups() {
 async function loadIcons() {
   loading.value = true
   try {
-    const params = { page: page.value, pageSize: pageSize.value }
+    const params: {
+      page: number
+      pageSize: number
+      groupId?: number | null
+      keyword?: string
+    } = { page: page.value, pageSize: pageSize.value }
     if (activeGroupId.value !== null) {
       params.groupId = activeGroupId.value
     }
@@ -122,8 +127,8 @@ function handleGroupSelect(groupId) {
   loadIcons()
 }
 
-function openGroupDialog(mode, group) {
-  groupDialogMode.value = mode
+function openGroupDialog(mode?: string, group?: any) {
+  groupDialogMode.value = mode || 'create'
   currentGroup.value = group || null
   groupDialogRef.value?.open(mode === 'edit' ? group : null)
 }
@@ -139,7 +144,7 @@ async function handleGroupConfirm(data) {
     }
     groupDialogRef.value?.close()
     await loadGroups()
-  } catch (err) {
+  } catch (err: any) {
     const msg = err.response?.data?.msg || '操作失败'
     ElMessage.error(msg)
   }
@@ -159,7 +164,7 @@ async function handleDeleteGroup(group) {
     }
     await loadGroups()
     await loadIcons()
-  } catch (err) {
+  } catch (err: any) {
     if (err !== 'cancel') {
       ElMessage.error(err.response?.data?.msg || '删除失败')
     }
@@ -179,8 +184,8 @@ function handlePageChange(p) {
   loadIcons()
 }
 
-function openIconDialog(mode, icon) {
-  iconDialogMode.value = mode
+function openIconDialog(mode?: string, icon?: any) {
+  iconDialogMode.value = mode || 'create'
   currentIcon.value = icon || null
   iconDialogRef.value?.open()
 }
@@ -214,7 +219,7 @@ async function handleDeleteIcon(icon) {
     await refreshVersion()
     await loadIcons()
     await loadGroups()
-  } catch (err) {
+  } catch (err: any) {
     if (err !== 'cancel') {
       ElMessage.error(err.response?.data?.msg || '删除失败')
     }

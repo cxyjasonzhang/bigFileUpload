@@ -97,10 +97,10 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, onMounted } from "vue";
 import { ElMessage } from "element-plus";
-import { fetchUsers, createUser, updateUser, deleteUser } from "@/utils/api.js";
+import { fetchUsers, createUser, updateUser, deleteUser } from "@/utils/api";
 import UserFormDialog from "@/components/UserFormDialog.vue";
 import SvgIcon from "@/components/SvgIcon.vue";
 
@@ -118,7 +118,7 @@ const pagination = reactive({
 });
 
 // 表格数据
-const tableData = ref([]);
+const tableData = ref<any[]>([]);
 const loading = ref(false);
 
 // 计算序号
@@ -180,7 +180,7 @@ function handlePageSizeChange(size) {
 
 const dialogVisible = ref(false);
 const dialogMode = ref("add");
-const currentUser = ref({});
+const currentUser = ref<any>({});
 
 function handleAdd() {
   dialogMode.value = "add";
@@ -206,7 +206,7 @@ async function handleFormSubmit({ data, done, fail }) {
     loadData();
   } catch (err) {
     fail();
-    ElMessage.error(err.response?.data?.msg || "操作失败，请稍后重试");
+    ElMessage.error((err as any).response?.data?.msg || "操作失败，请稍后重试");
   }
 }
 
@@ -216,7 +216,7 @@ async function handleDelete(row) {
     ElMessage.success("删除成功");
     loadData();
   } catch (err) {
-    ElMessage.error(err.response?.data?.msg || "删除失败，请稍后重试");
+    ElMessage.error((err as any).response?.data?.msg || "删除失败，请稍后重试");
   }
 }
 

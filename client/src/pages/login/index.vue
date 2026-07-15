@@ -52,15 +52,17 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive } from "vue";
 import { User, Lock } from "@element-plus/icons-vue";
-import { ElMessage } from "element-plus";
-import { login } from "@/utils/auth.js";
+import { ElMessage, type FormInstance } from "element-plus";
+import { login } from "@/utils/auth";
 
-const emit = defineEmits(["login-success"]);
+const emit = defineEmits<{
+  (e: "login-success"): void;
+}>();
 
-const formRef = ref();
+const formRef = ref<FormInstance | null>(null);
 const loading = ref(false);
 const form = reactive({
   username: "admin",
@@ -82,7 +84,7 @@ async function handleLogin() {
     ElMessage.success("登录成功");
     emit("login-success");
   } catch (err) {
-    ElMessage.error(err.message || "登录失败，请检查用户名和密码");
+    ElMessage.error((err as Error).message || "登录失败，请检查用户名和密码");
   } finally {
     loading.value = false;
   }

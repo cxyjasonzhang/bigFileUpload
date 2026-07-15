@@ -1,7 +1,17 @@
+// uploadQueue.ts - 大文件分片上传队列（排队、断点续传、并发限制、重试）
 import { reactive } from "vue";
-import { ElMessage } from 'element-plus'
-import { calculateFileHash, createFileChunks } from "./file.js";
-import { checkFile, uploadChunk, mergeChunks } from "./api.js";
+import { ElMessage } from "element-plus";
+import {
+  calculateFileHash,
+  createFileChunks,
+  type FileChunk,
+} from "./file";
+import {
+  checkFile,
+  uploadChunk,
+  mergeChunks,
+  type CheckFileResult,
+} from "./api";
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
 const CONCURRENT_LIMIT = 3;
@@ -15,11 +25,41 @@ export const TASK_STATUS = {
   PAUSED: "paused",
   SUCCESS: "success",
   ERROR: "error",
-};
+} as const;
+
+export type TaskStatus = (typeof TASK_STATUS)[keyof typeof TASK_STATUS];
+
+export interface UploadTask {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  fileHash: string;
+  chunkSize: number;
+  totalChunks: number;
+  uploadedChunks: number;
+  hashProgress: number;
+  uploadProgress: number;
+  status: TaskStatus;
+  createTime: number;
+}
+
+/** 暂停专用错误（区别于真实失败） */
+export class PausedError extends Error {
+  paused = true;
+  constructor() {
+    super("paused");
+    this.name = "PausedError";
+  }
+}
 
 export class UploadQueue {
+  tasks: UploadTask[];
+  currentTaskId: string | null;
+  fileMap: Map<string, File>;
+  abortControllerMap: Map<string, AbortController>;
+
   constructor() {
-    this.tasks = reactive([]);
+    this.tasks = reactive<UploadTask[]>([]);
     this.currentTaskId = null;
     // 存储 File 对象的映射（File 不可序列化，单独保存在内存中）
     this.fileMap = new Map();
@@ -27,8 +67,8 @@ export class UploadQueue {
     this.abortControllerMap = new Map();
   }
 
-  addTask(file) {
-    const task = {
+  addTask(file: File): UploadTask {
+    const task: UploadTask = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
       fileName: file.name,
       fileSize: file.size,
@@ -47,7 +87,7 @@ export class UploadQueue {
     return task;
   }
 
-  removeTask(taskId) {
+  removeTask(taskId: string): void {
     const idx = this.tasks.findIndex((t) => t.id === taskId);
     if (idx !== -1) {
       this.tasks.splice(idx, 1);
@@ -57,7 +97,7 @@ export class UploadQueue {
     }
   }
 
-  updateTask(taskId, updates) {
+  updateTask(taskId: string, updates: Partial<UploadTask>): void {
     const task = this.tasks.find((t) => t.id === taskId);
     if (task) {
       Object.assign(task, updates);
@@ -65,21 +105,18 @@ export class UploadQueue {
     }
   }
 
-  getTask(taskId) {
+  getTask(taskId: string): UploadTask | undefined {
     return this.tasks.find((t) => t.id === taskId);
   }
 
-  matchTaskByHash(fileHash) {
+  matchTaskByHash(fileHash: string): UploadTask | undefined {
     return this.tasks.find(
       (t) => t.fileHash === fileHash && t.status !== TASK_STATUS.SUCCESS,
     );
   }
 
-  saveTasks() {
-    const serializable = this.tasks.map((t) => {
-      const { ...data } = t;
-      return data;
-    });
+  saveTasks(): void {
+    const serializable = this.tasks.map((t) => ({ ...t }));
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable));
     } catch (e) {
@@ -87,11 +124,11 @@ export class UploadQueue {
     }
   }
 
-  loadTasks() {
+  loadTasks(): void {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
-      const parsed = JSON.parse(raw);
+      const parsed = JSON.parse(raw) as UploadTask[];
       this.tasks.splice(0, this.tasks.length);
       parsed.forEach((t) => {
         // 刷新后，将 uploading/hashing 状态重置为 paused
@@ -108,7 +145,7 @@ export class UploadQueue {
     }
   }
 
-  async syncTaskWithServer(taskId) {
+  async syncTaskWithServer(taskId: string): Promise<void> {
     const task = this.getTask(taskId);
     if (!task || !task.fileHash) return;
 
@@ -117,14 +154,15 @@ export class UploadQueue {
         task.fileHash,
         task.fileName,
       );
-      if (checkResult.data.uploaded) {
+      const result = checkResult.data as CheckFileResult;
+      if (result.uploaded) {
         this.updateTask(taskId, {
           status: TASK_STATUS.SUCCESS,
           uploadProgress: 100,
           uploadedChunks: task.totalChunks,
         });
       } else {
-        const existingChunks = checkResult.data.uploadedChunks || [];
+        const existingChunks = result.uploadedChunks || [];
         const uploadedCount = existingChunks.length;
         this.updateTask(taskId, {
           uploadedChunks: uploadedCount,
@@ -137,7 +175,7 @@ export class UploadQueue {
     }
   }
 
-  async startTask(taskId) {
+  async startTask(taskId: string): Promise<void> {
     const task = this.getTask(taskId);
     if (!task) return;
     const file = this.fileMap.get(taskId);
@@ -145,8 +183,7 @@ export class UploadQueue {
 
     // 如果当前有任务在上传，不能启动新任务
     if (this.currentTaskId && this.currentTaskId !== taskId) {
-      // 提示用户当前有任务在上传
-      ElMessage.warning('当前有任务在上传，请等待上传完成后再试')
+      ElMessage.warning("当前有任务在上传，请等待上传完成后再试");
       return;
     }
 
@@ -193,7 +230,7 @@ export class UploadQueue {
       // 暂停检查：checkFile 期间可能已被暂停
       if (this.getTask(taskId)?.status === TASK_STATUS.PAUSED) return;
 
-      if (checkResult.data.uploaded) {
+      if ((checkResult.data as CheckFileResult).uploaded) {
         this.updateTask(taskId, {
           status: TASK_STATUS.SUCCESS,
           uploadProgress: 100,
@@ -205,7 +242,8 @@ export class UploadQueue {
       }
 
       // 3. 记录已上传分片
-      const existingChunks = checkResult.data.uploadedChunks || [];
+      const existingChunks =
+        (checkResult.data as CheckFileResult).uploadedChunks || [];
       const skipChunks = new Set(existingChunks);
 
       // 4. 上传分片
@@ -231,7 +269,7 @@ export class UploadQueue {
         task.totalChunks,
       );
 
-      if (mergeResult.code === 0) {
+      if ((mergeResult.data as { code: number }).code === 0) {
         this.updateTask(taskId, {
           status: TASK_STATUS.SUCCESS,
           uploadProgress: 100,
@@ -240,7 +278,7 @@ export class UploadQueue {
         this.updateTask(taskId, { status: TASK_STATUS.ERROR });
       }
     } catch (err) {
-      if (err.paused) return;
+      if (err instanceof PausedError) return;
       console.error("上传失败", err);
       this.updateTask(taskId, { status: TASK_STATUS.ERROR });
     } finally {
@@ -251,7 +289,11 @@ export class UploadQueue {
     }
   }
 
-  async _uploadChunks(taskId, chunks, skipChunks) {
+  private async _uploadChunks(
+    taskId: string,
+    chunks: FileChunk[],
+    skipChunks: Set<number>,
+  ): Promise<void> {
     const tasks = chunks.filter((chunk) => !skipChunks.has(chunk.index));
     const task = this.getTask(taskId);
     if (!task) return;
@@ -262,7 +304,7 @@ export class UploadQueue {
     let index = 0;
     let isPaused = false;
 
-    const runNext = async () => {
+    const runNext = async (): Promise<void> => {
       while (index < tasks.length) {
         // 检查是否暂停
         const currentTask = this.getTask(taskId);
@@ -276,7 +318,7 @@ export class UploadQueue {
 
         const formData = new FormData();
         formData.append("fileHash", task.fileHash);
-        formData.append("chunkIndex", chunk.index);
+        formData.append("chunkIndex", String(chunk.index));
         formData.append("file", chunk.file);
 
         let retryCount = 0;
@@ -291,18 +333,23 @@ export class UploadQueue {
           try {
             await uploadChunk(formData, { signal: abortController.signal });
             uploadSuccess = true;
-            const currentTask = this.getTask(taskId);
-            if (currentTask && currentTask.status !== TASK_STATUS.PAUSED) {
-              const newUploaded = currentTask.uploadedChunks + 1;
+            const curTask = this.getTask(taskId);
+            if (curTask && curTask.status !== TASK_STATUS.PAUSED) {
+              const newUploaded = curTask.uploadedChunks + 1;
               this.updateTask(taskId, {
                 uploadedChunks: newUploaded,
                 uploadProgress: Math.round(
-                  (newUploaded / currentTask.totalChunks) * 100,
+                  (newUploaded / curTask.totalChunks) * 100,
                 ),
               });
             }
           } catch (err) {
-            if (err.code === "ERR_CANCELED" || err.name === "CanceledError" || err.name === "AbortError") {
+            const e = err as { code?: string; name?: string };
+            if (
+              e.code === "ERR_CANCELED" ||
+              e.name === "CanceledError" ||
+              e.name === "AbortError"
+            ) {
               isPaused = true;
               return;
             }
@@ -319,18 +366,18 @@ export class UploadQueue {
       }
     };
 
-    const workers = [];
+    const workers: Promise<void>[] = [];
     for (let i = 0; i < Math.min(CONCURRENT_LIMIT, tasks.length); i++) {
       workers.push(runNext());
     }
     await Promise.all(workers);
 
     if (isPaused) {
-      throw { paused: true };
+      throw new PausedError();
     }
   }
 
-  pauseTask(taskId) {
+  pauseTask(taskId: string): void {
     const task = this.getTask(taskId);
     if (!task) return;
     if (
@@ -343,7 +390,7 @@ export class UploadQueue {
     }
   }
 
-  async resumeTask(taskId, file) {
+  async resumeTask(taskId: string, file?: File): Promise<void> {
     const task = this.getTask(taskId);
     if (!task) return;
 
@@ -382,12 +429,12 @@ export class UploadQueue {
     this.startTask(taskId);
   }
 
-  cancelTask(taskId) {
+  cancelTask(taskId: string): void {
     this.pauseTask(taskId);
     this.removeTask(taskId);
   }
 
-  startNext() {
+  startNext(): void {
     if (this.currentTaskId) return;
 
     const nextTask = this.tasks.find(
@@ -398,11 +445,11 @@ export class UploadQueue {
     }
   }
 
-  hasFile(taskId) {
+  hasFile(taskId: string): boolean {
     return this.fileMap.has(taskId);
   }
 
-  setFile(taskId, file) {
+  setFile(taskId: string, file: File): void {
     this.fileMap.set(taskId, file);
   }
 }

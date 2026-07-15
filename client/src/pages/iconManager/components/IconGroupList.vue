@@ -41,15 +41,26 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Edit, Delete, Plus } from '@element-plus/icons-vue'
 
-const props = defineProps({
-  groups: { type: Array, default: () => [] },
-  activeGroupId: { type: [Number, null], default: null },
-})
+const props = withDefaults(
+  defineProps<{
+    groups?: any[]
+    activeGroupId?: number | null
+  }>(),
+  {
+    groups: () => [],
+    activeGroupId: null,
+  },
+)
 
-const emit = defineEmits(['select', 'edit', 'delete', 'create'])
+const emit = defineEmits<{
+  (e: 'select', id: number | null): void
+  (e: 'edit', mode: string, group: any): void
+  (e: 'delete', group: any): void
+  (e: 'create', mode: string): void
+}>()
 
 /**
  * 右键悬浮框命令分发：编辑 / 删除
