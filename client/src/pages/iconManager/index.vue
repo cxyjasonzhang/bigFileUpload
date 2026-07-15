@@ -51,6 +51,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+
+defineOptions({ name: 'IconManager' })
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   getIconGroups, createIconGroup, updateIconGroup, deleteIconGroup,

@@ -99,6 +99,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from "vue";
+
+defineOptions({ name: "UserManagement" });
 import { ElMessage } from "element-plus";
 import { fetchUsers, createUser, updateUser, deleteUser } from "@/utils/api";
 import UserFormDialog from "@/components/UserFormDialog.vue";

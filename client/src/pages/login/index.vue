@@ -54,13 +54,13 @@
 
 <script setup lang="ts">
 import { ref, reactive } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { User, Lock } from "@element-plus/icons-vue";
 import { ElMessage, type FormInstance } from "element-plus";
 import { login } from "@/utils/auth";
 
-const emit = defineEmits<{
-  (e: "login-success"): void;
-}>();
+const route = useRoute();
+const router = useRouter();
 
 const formRef = ref<FormInstance | null>(null);
 const loading = ref(false);
@@ -82,7 +82,9 @@ async function handleLogin() {
   try {
     await login(form.username, form.password);
     ElMessage.success("登录成功");
-    emit("login-success");
+    // 回跳到登录前意图访问的路由（默认工作台）
+    const redirect = (route.query.redirect as string) || "/workbench";
+    router.push(redirect);
   } catch (err) {
     ElMessage.error((err as Error).message || "登录失败，请检查用户名和密码");
   } finally {

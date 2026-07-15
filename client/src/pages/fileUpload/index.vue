@@ -195,6 +195,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+
+defineOptions({ name: "FileUpload" });
 import { UploadFilled } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import { UploadQueue, TASK_STATUS } from "@/utils/uploadQueue";
