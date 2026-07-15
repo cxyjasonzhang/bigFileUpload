@@ -1,21 +1,13 @@
 <template>
-  <el-dialog ref="dialogRef" :model-value="modelValue" :show-close="false" @update:model-value="handleVisibleChange"
-    @opened="handleOpened" @closed="handleClosed" v-bind="$attrs">
+  <el-dialog ref="dialogRef" :model-value="modelValue" :top="top" :show-close="false"
+    @update:model-value="handleVisibleChange" @opened="handleOpened" @closed="handleClosed" v-bind="$attrs">
     <template #header>
       <div class="draggable-dialog-header" :class="{ 'is-draggable': draggable && !isFullscreen }"
         @pointerdown="onPointerDown">
         <span class="dialog-title">{{ title }}</span>
         <div class="header-actions">
-          <!-- <el-button v-if="fullscreenable" :icon="isFullscreen ? <SvgIcon :name="reduceIcon" color="skyblue"
-            :size="104" /> : FullScreen"
-          circle
-          size="small"
-          class="action-btn"
-          @click.stop="toggleFullscreen"
-          /> -->
           <div class="toggle-btn" @click.stop="toggleFullscreen">
-            <SvgIcon v-if="!isFullscreen"  name="ai/expand" color="#999" :size="18" />
-            <SvgIcon v-else :name="reduceIcon" color="#999" :size="18" />
+            <SvgIcon :name="isFullscreen ? 'ai/reduce' : 'ai/expand'" class="toggle-icon" color="#999" :size="14" />
           </div>
           <el-button :icon="Close" circle size="small" class="action-btn close-btn" @click.stop="closeDialog" />
         </div>
@@ -32,7 +24,7 @@
 
 <script setup>
 import { ref, watch, nextTick, onUnmounted } from 'vue'
-import { FullScreen, CopyDocument, Close } from '@element-plus/icons-vue'
+import { Close } from '@element-plus/icons-vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 
 // ==================== Props ====================
@@ -41,6 +33,8 @@ const props = defineProps({
   title: { type: String, default: '' },
   draggable: { type: Boolean, default: true },
   fullscreenable: { type: Boolean, default: true },
+  // 弹窗距离顶部的距离，支持 CSS 单位（如 15vh、100px），由父组件自定义
+  top: { type: String, default: '22vh' },
 })
 
 // ==================== Emits ====================
@@ -49,8 +43,6 @@ const emit = defineEmits(['update:modelValue', 'fullscreen-change'])
 // ==================== Refs & State ====================
 const dialogRef = ref(null)
 const isFullscreen = ref(false)
-
-const reduceIcon = ref('ai/reduce')
 
 // Drag state (plain variables — no reactivity needed for perf)
 let dragX = 0
@@ -422,11 +414,25 @@ onUnmounted(() => {
 }
 
 .toggle-btn {
-  border-radius: 50%;
+  cursor: pointer;
 
-  &:hover {
-    background-color: aquamarine;
+  .toggle-icon {
+    padding: 8px;
+    border-radius: 50%;
+
+    &:hover {
+      background-color: #ecf5ff;
+    }
   }
+}
+
+// 关闭按钮：去除边框并调大尺寸
+.action-btn.close-btn {
+  border: none;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  color: #999;
 }
 
 // Close button hover

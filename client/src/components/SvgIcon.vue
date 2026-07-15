@@ -59,6 +59,7 @@ const iconStyle = computed(() => ({
 
 <style scoped lang="scss">
 .svg-icon {
+  box-sizing: content-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
