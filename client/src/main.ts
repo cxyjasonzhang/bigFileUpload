@@ -2,6 +2,10 @@ import { createApp } from "vue";
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
 import * as ElementPlusIconsVue from "@element-plus/icons-vue";
+/* these are necessary styles for vue flow */
+import '@vue-flow/core/dist/style.css';
+/* this contains the default theme, these are optional styles */
+import '@vue-flow/core/dist/theme-default.css';
 import App from "./App.vue";
 import router from "./router";
 import { createPinia } from "pinia";

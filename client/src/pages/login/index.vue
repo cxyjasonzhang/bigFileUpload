@@ -1,58 +1,61 @@
 <template>
-  <div class="login-card">
-    <div class="login-header">
-      <h2>大文件上传系统</h2>
-      <p class="login-subtitle">请登录后使用</p>
-    </div>
+  <div class="login-page">
+    <div class="login-card">
+      <div class="login-header">
+        <h2>文件管理系统</h2>
+        <!-- <p class="login-subtitle">欢迎登录，请输入您的账号</p> -->
+      </div>
 
-    <el-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-position="top"
-      @submit.prevent="handleLogin"
-    >
-      <el-form-item label="用户名" prop="username">
-        <el-input
-          v-model="form.username"
-          placeholder="请输入用户名"
-          :prefix-icon="User"
-          size="large"
-        />
-      </el-form-item>
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-position="top"
+        @submit.prevent="handleLogin"
+      >
+        <el-form-item label="用户名" prop="username">
+          <el-input
+            v-model="form.username"
+            placeholder="请输入用户名"
+            :prefix-icon="User"
+            size="large"
+          />
+        </el-form-item>
 
-      <el-form-item label="密码" prop="password">
-        <el-input
-          v-model="form.password"
-          type="password"
-          placeholder="请输入密码"
-          :prefix-icon="Lock"
-          size="large"
-          show-password
-          @keyup.enter="handleLogin"
-        />
-      </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input
+            v-model="form.password"
+            type="password"
+            placeholder="请输入密码"
+            :prefix-icon="Lock"
+            size="large"
+            show-password
+            @keyup.enter="handleLogin"
+          />
+        </el-form-item>
 
-      <el-form-item>
-        <el-button
-          type="primary"
-          size="large"
-          :loading="loading"
-          class="login-btn"
-          @click="handleLogin"
-        >
-          {{ loading ? "登录中..." : "登 录" }}
-        </el-button>
-      </el-form-item>
-    </el-form>
+        <el-form-item>
+          <el-button
+            type="primary"
+            size="large"
+            :loading="loading"
+            class="login-btn"
+            @click="handleLogin"
+          >
+            {{ loading ? "登录中..." : "登 录" }}
+          </el-button>
+        </el-form-item>
+      </el-form>
 
-    <div class="login-hint">
-      Demo 账号：admin / admin123
+      <div class="login-hint">
+        Demo 账号：admin / admin123
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+// 登录页：表单登录 + 登录成功路由回跳到意图路由
 import { ref, reactive } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { User, Lock } from "@element-plus/icons-vue";

@@ -55,6 +55,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/pages/iconManager/index.vue"),
         meta: { title: "图标管理", componentName: "IconManager" },
       },
+      {
+        path: "workflow",
+        name: "Workflow",
+        component: () => import("@/pages/workflow/index.vue"),
+        meta: { title: "工作流", componentName: "Workflow" },
+      },
     ],
   },
   // 兜底：未知路径回到工作台

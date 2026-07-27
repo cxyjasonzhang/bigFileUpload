@@ -12,4 +12,5 @@ export const menuItems: MenuItem[] = [
   { path: "/upload", title: "文件上传", icon: "UploadFilled", desc: "大文件分片上传、断点续传" },
   { path: "/users", title: "用户管理", icon: "User", desc: "管理系统用户信息" },
   { path: "/icons", title: "图标管理", icon: "Picture", desc: "SVG 图标分组与导入" },
+  { path: "/workflow", title: "流程管理", icon: "FlowChart", desc: "流程设计与可视化" },
 ];

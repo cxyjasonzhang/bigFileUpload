@@ -1,35 +1,137 @@
+// 登录页样式：全屏背景图 + 暗色遮罩 + 居中透明毛玻璃卡片（白色文字主题）
+.login-page {
+  // 全屏固定铺满视口
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // 全屏背景图（自然景观），始终居中覆盖
+  background: url("/images/loginBg.png") center / cover no-repeat;
+  padding: 24px;
+  overflow: auto;
+
+  // 暗色渐变遮罩：压暗背景，让卡片更突出
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.25) 100%);
+    z-index: 0;
+  }
+}
+
 .login-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 40px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  max-width: 420px;
-  margin: 60px auto 0;
+  // 居中卡片（由 flex 父级居中定位）
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 440px;
+  // 透明毛玻璃效果：低透明度白色基底 + 模糊 + 微妙边框
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 48px 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  // 覆盖旧版 margin:60px auto 0，避免与 flex 居中冲突
+  margin: 0;
+  // 卡片淡入上移的入场动画
+  animation: login-card-in 0.5s ease-out;
+}
+
+// 卡片入场动画
+@keyframes login-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 36px;
 }
 
 .login-header h2 {
-  font-size: 22px;
-  color: #303133;
-  margin-bottom: 8px;
+  font-size: 26px;
+  color: #fff;
+  margin: 0 0 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
 }
 
 .login-subtitle {
   font-size: 14px;
-  color: #909399;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+}
+
+// 表单元素统一样式：白色文字 + 半透明输入框
+.login-card {
+  // 表单字段标签
+  :deep(.el-form-item__label) {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 14px;
+  }
+
+  // 输入框背景半透明
+  :deep(.el-input__wrapper) {
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+    transition: box-shadow 0.25s;
+    border-radius: 8px;
+
+    &:hover {
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4);
+    }
+  }
+
+  // 输入框聚焦态：蓝色边框（与主题色一致）
+  :deep(.el-input__wrapper:focus-within) {
+    box-shadow: 0 0 0 1px #409eff;
+  }
+
+  // 输入框文字白色 + 占位符浅白
+  :deep(.el-input__inner) {
+    color: #fff;
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.45);
+    }
+  }
+
+  // 输入框前缀图标（用户、锁图标）
+  :deep(.el-input__prefix-inner) {
+    color: rgba(255, 255, 255, 0.6);
+  }
 }
 
 .login-btn {
   width: 100%;
+  height: 44px;
+  font-size: 15px;
+  letter-spacing: 4px;
 }
 
 .login-hint {
   text-align: center;
   font-size: 12px;
-  color: #c0c4cc;
-  margin-top: 16px;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 18px;
+}
+
+// 窄屏适配：缩小卡片内边距与标题字号
+@media (max-width: 480px) {
+  .login-card {
+    padding: 32px 24px;
+    border-radius: 12px;
+  }
+  .login-header h2 {
+    font-size: 22px;
+  }
 }
