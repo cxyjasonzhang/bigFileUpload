@@ -1,0 +1,69 @@
+/* 主题 CSS 变量：浅色模式（默认） */
+:root {
+  /* 基础背景 */
+  --app-bg: #f0f2f5;
+  --app-header-bg: #ffffff;
+  --app-sidebar-bg: #ffffff;
+  --app-content-bg: #f0f2f5;
+
+  /* 边框 */
+  --app-border: #e8e8e8;
+
+  /* 文字 */
+  --app-text-primary: #303133;
+  --app-text-regular: #606266;
+  --app-text-secondary: #909399;
+  --app-text-placeholder: #c0c4cc;
+
+  /* 侧栏菜单 */
+  --app-menu-active-bg: #ecf5ff;
+  --app-menu-active-text: #409eff;
+  --app-menu-hover-bg: #f5f7fa;
+
+  /* Tab 标签栏 */
+  --app-tab-bg: #ffffff;
+  --app-tab-active-bg: #ffffff;
+  --app-tab-text: #606266;
+  --app-tab-active-text: #409eff;
+  --app-tab-close-hover-bg: #f0f2f5;
+  --app-tab-border: #e8e8e8;
+
+  /* 工作台卡片 */
+  --app-card-bg: #ffffff;
+}
+
+/* 暗色模式 */
+html.dark {
+  color-scheme: dark;
+
+  /* 基础背景 */
+  --app-bg: #141414;
+  --app-header-bg: #1d1d1d;
+  --app-sidebar-bg: #1d1d1d;
+  --app-content-bg: #141414;
+
+  /* 边框 */
+  --app-border: #333333;
+
+  /* 文字 */
+  --app-text-primary: #e4e7ed;
+  --app-text-regular: #b0b3b8;
+  --app-text-secondary: #73767a;
+  --app-text-placeholder: #4b4d52;
+
+  /* 侧栏菜单 */
+  --app-menu-active-bg: #1c2a40;
+  --app-menu-active-text: #79bbff;
+  --app-menu-hover-bg: #2a2a2a;
+
+  /* Tab 标签栏 */
+  --app-tab-bg: #1d1d1d;
+  --app-tab-active-bg: #141414;
+  --app-tab-text: #b0b3b8;
+  --app-tab-active-text: #79bbff;
+  --app-tab-close-hover-bg: #333333;
+  --app-tab-border: #333333;
+
+  /* 工作台卡片 */
+  --app-card-bg: #1d1d1d;
+}

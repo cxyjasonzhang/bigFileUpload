@@ -157,6 +157,7 @@ function handleCardClick(icon) {
   justify-content: center;
   margin-bottom: 8px;
   color: var(--el-text-color-primary);
+  fill: var(--app-text-primary);
   // 图标浮于遮罩之上，悬浮时仍清晰可见
   position: relative;
   z-index: 2;

@@ -31,6 +31,10 @@ export const useLayoutStore = defineStore(
     const collapsed = ref(false);
     // 已访问路由列表（历史 Tab）
     const visitedRoutes = ref<VisitedRoute[]>([{ ...WORKBENCH }]);
+    // 主题模式：浅色 | 暗色
+    const mode = ref<"light" | "dark">("light");
+    // 主题色
+    const primaryColor = ref("#5D87FF");
 
     /** 补入一条已访问路由，已存在则跳过 */
     function addVisited(route: VisitedRoute) {
@@ -54,6 +58,16 @@ export const useLayoutStore = defineStore(
       collapsed.value = v;
     }
 
+    /** 设置主题模式 */
+    function setMode(m: "light" | "dark") {
+      mode.value = m;
+    }
+
+    /** 设置主题色 */
+    function setPrimaryColor(color: string) {
+      primaryColor.value = color;
+    }
+
     // 决策 10：窄屏（<768px）自动收起侧栏；宽屏不强制展开，保留用户显式选择
     function initLayout() {
       const mql = window.matchMedia("(max-width: 768px)");
@@ -67,10 +81,14 @@ export const useLayoutStore = defineStore(
     return {
       collapsed,
       visitedRoutes,
+      mode,
+      primaryColor,
       addVisited,
       removeVisited,
       toggleSidebar,
       setSidebar,
+      setMode,
+      setPrimaryColor,
       initLayout,
     };
   },
@@ -78,7 +96,7 @@ export const useLayoutStore = defineStore(
     persist: {
       key: "layout-store",
       // 仅持久化外壳视图状态，不持久化业务数据
-      paths: ["collapsed", "visitedRoutes"],
+      paths: ["collapsed", "visitedRoutes", "mode", "primaryColor"],
     },
   },
 );

@@ -1,12 +1,16 @@
 import { createApp } from "vue";
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
+// Element Plus 暗色模式 CSS 变量
+import "element-plus/theme-chalk/dark/css-vars.css";
 import * as ElementPlusIconsVue from "@element-plus/icons-vue";
 /* these are necessary styles for vue flow */
 import '@vue-flow/core/dist/style.css';
 /* this contains the default theme, these are optional styles */
 import '@vue-flow/core/dist/theme-default.css';
 import App from "./App.vue";
+// 主题 CSS 变量（自定义语义色值）
+import "@/styles/theme.css";
 import router from "./router";
 import { createPinia } from "pinia";
 import piniaPluginPersistedstate from "pinia-plugin-persistedstate";

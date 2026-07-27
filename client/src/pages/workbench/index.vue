@@ -57,7 +57,7 @@ function go(path: string) {
 }
 
 .welcome-desc {
-  color: #888;
+  color: var(--app-text-secondary);
   font-size: 14px;
 }
 
@@ -78,7 +78,7 @@ function go(path: string) {
 }
 
 .entry-icon {
-  color: #1890ff;
+  color: var(--el-color-primary);
   margin-bottom: 12px;
 }
 
@@ -88,7 +88,7 @@ function go(path: string) {
 }
 
 .entry-card p {
-  color: #888;
+  color: var(--app-text-secondary);
   font-size: 13px;
   line-height: 1.5;
 }

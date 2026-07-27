@@ -376,7 +376,7 @@ onUnmounted(() => {
     margin-right: 12px;
     font-size: 16px;
     font-weight: 600;
-    color: #303133;
+    color: var(--app-text-primary);
   }
 
   .header-actions {

@@ -50,8 +50,8 @@ function handleClose(tag: VisitedRoute) {
 .app-tabs {
   height: 40px;
   flex-shrink: 0;
-  background: #fff;
-  border-bottom: 1px solid #e8e8e8;
+  background: var(--app-tab-bg);
+  border-bottom: 1px solid var(--app-tab-border);
   display: flex;
   align-items: center;
   gap: 8px;

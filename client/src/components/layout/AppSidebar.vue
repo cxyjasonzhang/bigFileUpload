@@ -41,8 +41,8 @@ function handleSelect(index: string) {
 .sidebar {
   width: 220px;
   flex-shrink: 0;
-  background: #001529;
-  color: #fff;
+  background: var(--app-sidebar-bg);
+  color: var(--app-text-primary);
   display: flex;
   flex-direction: column;
   transition: width 0.2s;
@@ -60,9 +60,9 @@ function handleSelect(index: string) {
   justify-content: center;
   font-size: 16px;
   font-weight: 600;
-  color: #fff;
+  color: var(--app-text-primary);
   white-space: nowrap;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--app-border);
 }
 
 .sidebar-menu {
@@ -72,15 +72,15 @@ function handleSelect(index: string) {
 }
 
 .sidebar-menu :deep(.el-menu-item) {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--app-text-regular);
 }
 
 .sidebar-menu :deep(.el-menu-item.is-active) {
-  color: #fff;
-  background: #1890ff;
+  color: var(--el-color-primary);
+  background: var(--app-menu-active-bg);
 }
 
 .sidebar-menu :deep(.el-menu-item:hover) {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--app-menu-hover-bg);
 }
 </style>

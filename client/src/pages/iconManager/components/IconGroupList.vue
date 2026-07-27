@@ -98,7 +98,7 @@ function handleCommand(cmd, group) {
   }
 
   &.active {
-    background: var(--el-color-primary-light-9);
+    background: var(--app-content-bg);
     color: var(--el-color-primary);
     font-weight: 500;
     border-left-color: var(--el-color-primary);
@@ -122,12 +122,12 @@ function handleCommand(cmd, group) {
   cursor: pointer;
   color: var(--el-color-primary);
   font-size: 14px;
-  border: 1px dashed var(--el-color-primary-light-5);
+  border: 1px dashed var(--el-color-primary-light-7);
   border-radius: 8px;
   transition: background 0.2s;
 
   &:hover {
-    background: var(--el-color-primary-light-9);
+    background: var(--el-color-primary-light-8);
   }
 }
 </style>

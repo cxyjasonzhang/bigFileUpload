@@ -59,7 +59,7 @@ onMounted(() => {
   flex: 1;
   overflow: auto;
   padding: 16px;
-  background: #f0f2f5;
+  background: var(--app-content-bg);
   min-height: 0;
 }
 </style>

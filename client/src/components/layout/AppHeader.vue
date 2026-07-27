@@ -17,6 +17,13 @@
     </div>
 
     <div class="header-right">
+      <!-- 主题配置入口 -->
+      <el-button text @click="drawerVisible = true" title="主题设置">
+        <el-icon size="20">
+          <Setting />
+        </el-icon>
+      </el-button>
+
       <el-dropdown @command="handleCommand">
         <span class="user-info">
           👤 {{ authState.user?.name || authState.user?.username }}
@@ -30,6 +37,9 @@
         </template>
       </el-dropdown>
     </div>
+
+    <!-- 主题配置右侧抽屉 -->
+    <ConfigDrawer v-model="drawerVisible" />
   </div>
 </template>
 
@@ -42,15 +52,18 @@ import {
   FullScreen,
   Aim,
   ArrowDown,
+  Setting,
 } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import { authState, logout } from "@/utils/auth";
 import { useLayoutStore } from "@/stores/layout";
+import ConfigDrawer from "./ConfigDrawer.vue";
 
 const router = useRouter();
 const layout = useLayoutStore();
 const collapsed = computed(() => layout.collapsed);
 const isFullscreen = ref(false);
+const drawerVisible = ref(false);
 
 // 同步系统全屏状态（如用户按 ESC 退出全屏时图标也能正确回弹）
 function syncFullscreen() {
@@ -90,8 +103,8 @@ async function handleCommand(cmd: string) {
 .app-header {
   height: 56px;
   flex-shrink: 0;
-  background: #fff;
-  border-bottom: 1px solid #e8e8e8;
+  background: var(--app-header-bg);
+  border-bottom: 1px solid var(--app-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -104,12 +117,18 @@ async function handleCommand(cmd: string) {
   gap: 4px;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .user-info {
   display: flex;
   align-items: center;
   gap: 4px;
   cursor: pointer;
-  color: #333;
+  color: var(--app-text-primary);
   font-size: 14px;
 }
 </style>
