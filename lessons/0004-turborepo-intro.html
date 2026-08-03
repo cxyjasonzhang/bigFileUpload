@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第4课：Turborepo 入门 — 构建加速</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .problem-flow {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+      justify-content: center;
+    }
+    .problem-flow .step-box {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .problem-flow .step-box.bad { background: #fee2e2; color: #991b1b; }
+    .problem-flow .step-box.good { background: #d1fae5; color: #065f46; }
+    .problem-flow .step-box.neutral { background: #f3f4f6; color: #374151; }
+
+    .cache-viz {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin: 1rem 0;
+      text-align: center;
+    }
+    .cache-viz .cache-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin: 0.5rem 0;
+      font-size: 0.88rem;
+    }
+    .cache-hit {
+      background: #d1fae5;
+      color: #065f46;
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.82rem;
+    }
+    .cache-miss {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.82rem;
+    }
+    .cache-arrow { font-size: 1.2rem; color: var(--text-secondary); }
+
+    .before-after {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    @media (max-width: 600px) { .before-after { grid-template-columns: 1fr; } }
+    .before-after .ba-box {
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+    }
+    .before-after .ba-box.before {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+    }
+    .before-after .ba-box.after {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+    }
+    .before-after .ba-box h4 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+    .before-after .ba-box.before h4 { color: #991b1b; }
+    .before-after .ba-box.after h4 { color: #166534; }
+    .before-after .ba-box p { font-size: 0.85rem; margin-bottom: 0; }
+
+    .pipeline-diagram {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 1rem 0;
+      font-size: 0.85rem;
+    }
+    .pipeline-box {
+      padding: 0.45rem 1.2rem;
+      border-radius: var(--radius);
+      font-weight: 600;
+    }
+    .pipeline-box.topo { background: #dbeafe; color: #1e40af; }
+    .pipeline-box.cache { background: #fef3c7; color: #92400e; }
+    .pipeline-box.final { background: #d1fae5; color: #065f46; }
+
+    .speed-bar {
+      width: 100%;
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      overflow: hidden;
+    }
+    .speed-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.8s ease;
+    }
+    .speed-bar-fill.slow { background: #ef4444; width: 100%; }
+    .speed-bar-fill.fast { background: #10b981; width: 15%; }
+    .speed-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header class="lesson-header">
+    <div class="lesson-number">第 4 课</div>
+    <h1 class="lesson-title">Turborepo 入门 — 给你的 Monorepo 装上"涡轮增压"</h1>
+  </header>
+
+  <div class="meta">
+    <div class="meta-item">📅 2026-07-29</div>
+    <div class="meta-item">⏱️ 约 20 分钟</div>
+    <div class="meta-item">⚡ 性能优化</div>
+  </div>
+
+  <!-- ==================== 引入 ==================== -->
+  <div class="section">
+    <h2 class="section-title">0. pnpm Workspace 的"短板"</h2>
+    <p>
+      前几课我们用 pnpm Workspace 搞定了<strong>依赖共享</strong>和<strong>类型安全</strong>。
+      但有一个场景会让你抓狂：
+    </p>
+
+    <div class="problem-flow">
+      <span class="step-box neutral">改了 shared-utils</span>
+      <span>→</span>
+      <span class="step-box neutral">pnpm -r run build</span>
+      <span>→</span>
+      <span class="step-box bad">全量重构建 😫</span>
+    </div>
+
+    <div class="before-after">
+      <div class="ba-box before">
+        <h4>❌ 没有 Turborepo</h4>
+        <p>改 shared-utils 的一行注释 → admin 也完整重构建 → server 也完整重构建。<br>三个项目，改一行，全部跑一遍。慢。</p>
+      </div>
+      <div class="ba-box after">
+        <h4>✅ 有了 Turborepo</h4>
+        <p>改 shared-utils 的一行注释 → 如果产物没变（缓存命中）→ admin 和 server <strong>直接跳过</strong>。<br>三个项目，改一行，零构建。秒出结果。</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">🎯 Turborepo 解决两个核心问题</div>
+      <p>
+        <strong>① 按依赖顺序构建：</strong>如果 admin 依赖 shared-utils，Turborepo 保证先 build shared-utils，再 build admin。<br>
+        <strong>② 缓存：</strong>如果某次构建的输入（源码 + 依赖）和上次一模一样，直接复用上次的产物，跳过构建。
+      </p>
+    </div>
+  </div>
+
+  <!-- ==================== 第1部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">1. Turborepo 是什么</h2>
+
+    <div class="card">
+      <div class="card-title">一句话</div>
+      <p>
+        Turborepo 是 Vercel 开源的 <strong>Monorepo 构建系统</strong>。
+        它不替代 pnpm（包管理归 pnpm 管），它负责<strong>编排任务执行顺序</strong>和<strong>缓存构建结果</strong>。
+      </p>
+    </div>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th style="width:25%">职责</th>
+          <th style="width:37%">pnpm Workspace</th>
+          <th style="width:38%">Turborepo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>依赖安装</td>
+          <td><span class="tag tag-green">pnpm 管</span></td>
+          <td>不管</td>
+        </tr>
+        <tr>
+          <td>包间链接</td>
+          <td><span class="tag tag-green">符号链接</span></td>
+          <td>不管</td>
+        </tr>
+        <tr>
+          <td>任务执行顺序</td>
+          <td>按字母顺序跑</td>
+          <td><span class="tag tag-blue">依赖拓扑排序</span></td>
+        </tr>
+        <tr>
+          <td>构建缓存</td>
+          <td>无</td>
+          <td><span class="tag tag-blue">基于内容的缓存</span></td>
+        </tr>
+        <tr>
+          <td>远程缓存</td>
+          <td>无</td>
+          <td><span class="tag tag-blue">团队共享缓存</span></td>
+        </tr>
+        <tr>
+          <td>并行执行</td>
+          <td>支持（-r --parallel）</td>
+          <td><span class="tag tag-blue">智能并行（按依赖图）</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ==================== 第2部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">2. 安装 &amp; 配置</h2>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>在根目录安装 turbo</h4>
+        <pre><code>pnpm add turbo -Dw</code></pre>
+        <p>作为全局开发依赖安装在根目录。<code>-Dw</code> 表示 dev + workspace-root。</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>创建 turbo.json — Turborepo 的核心配置</h4>
+        <div class="file-label">my-monorepo/turbo.json</div>
+        <pre><code>{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      // 声明 build 依赖了哪些任务的产物
+      "dependsOn": ["^build"],
+      // 告诉 turbo build 的输出在哪（用于缓存）
+      "outputs": ["dist/**", ".next/**"]
+    },
+    "dev": {
+      // dev 不缓存（开发模式总是需要重跑）
+      "cache": false,
+      "persistent": true
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"]
+    },
+    "lint": {
+      // lint 不依赖其他任务的产物
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    }
+  }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔑 <code>dependsOn</code> 的两种写法</div>
+      <p>
+        <code>"dependsOn": ["^build"]</code> — 带 <code>^</code> 前缀：先跑<strong>这个包所依赖的包</strong>的 build。<br>
+        <code>"dependsOn": ["build"]</code> — 不带 <code>^</code>：先跑<strong>这个包自己</strong>的其他任务（用得少）。<br><br>
+        👉 这是最重要的概念：<code>^build</code> 意味着"admin 的 build 依赖 shared-utils 的 build"，Turborepo 会先构建 shared-utils，再构建 admin。
+      </p>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>用 turbo 替代 pnpm 执行任务</h4>
+        <p>修改根目录 package.json 的脚本：</p>
+        <div class="file-label">my-monorepo/package.json</div>
+        <pre><code>{
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck"
+  }
+}</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 第3部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">3. 缓存机制 — Turborepo 的灵魂</h2>
+
+    <p>
+      Turborepo 的缓存不是"时间到就过期"，而是<strong>基于内容哈希</strong>的。
+      每次运行任务时，它会：
+    </p>
+    <ol>
+      <li>计算所有输入文件的哈希（源码 + 依赖的 package.json）</li>
+      <li>拿这个哈希去 <code>.turbo</code> 缓存目录里找</li>
+      <li><strong>找到→直接还原产物</strong>（<span class="cache-hit">CACHE HIT</span>），跳过实际构建</li>
+      <li>找不到→执行构建 → 把产物存入缓存（<span class="cache-miss">CACHE MISS</span>）</li>
+    </ol>
+
+    <div class="cache-viz">
+      <div class="cache-row">
+        <span>源码文件</span>
+        <span class="cache-arrow">→</span>
+        <span>哈希计算</span>
+        <span class="cache-arrow">→</span>
+        <span class="cache-hit">CACHE HIT</span>
+        <span class="cache-arrow">→</span>
+        <span>⚡ 秒级完成</span>
+      </div>
+      <div class="cache-row" style="margin-top:0.3rem;">
+        <span>（无变化时）</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔬 亲自感受一下</div>
+      <p>
+        运行两次 <code>pnpm build</code>（即 <code>turbo build</code>）：<br>
+        第一次：所有包全量构建（<span class="cache-miss">CACHE MISS</span>）<br>
+        第二次：全缓存命中（<span class="cache-hit">FULL TURBO</span>），可能不到 100ms 就完成！
+      </p>
+    </div>
+  </div>
+
+  <!-- ==================== 第4部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">4. 实战：给已有项目接入 Turborepo</h2>
+
+    <p>基于第 2-3 课搭好的 my-monorepo 项目，完整接入流程：</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>安装 turbo</h4>
+        <pre><code>cd my-monorepo
+pnpm add turbo -Dw</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>创建 turbo.json（基于现有项目）</h4>
+        <div class="file-label">turbo.json</div>
+        <pre><code>{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {},
+    "typecheck": {
+      "dependsOn": ["^build"]
+    }
+  }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>确保每个子包有 build 脚本</h4>
+        <p>检查各包子包的 package.json，至少要有 build 脚本：</p>
+        <div class="file-label">packages/shared-utils/package.json</div>
+        <pre><code>{
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  }
+}</code></pre>
+
+        <div class="file-label">apps/admin/package.json（Vite 创建的已有）</div>
+        <pre><code>{
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview"
+  }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>更新根目录 scripts</h4>
+        <div class="file-label">package.json</div>
+        <pre><code>{
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck"
+  }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>跑起来！</h4>
+        <pre><code>pnpm build</code></pre>
+        <p>终端会显示 turbo 的运行摘要。再跑一次，你会看到熟悉的：</p>
+        <div class="output-box">
+          <div class="label">✅ 第二次运行的输出</div>
+          <pre>Tasks:    3 successful, 3 total
+Cached:    3 cached, 3 total
+  Time:    87ms >>> FULL TURBO</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 第5部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">5. turbo 常用命令</h2>
+
+    <div class="cmd-ref">
+      <div class="cmd-card">
+        <div class="cmd">turbo build</div>
+        <div class="desc">按 turbo.json 配置执行 build</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd">turbo build --filter=admin</div>
+        <div class="desc">只构建 admin（含它的依赖）</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd">turbo build --force</div>
+        <div class="desc">忽略缓存，强制全量重构建</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd">turbo build --dry-run</div>
+        <div class="desc">预览要执行的任务（不实际执行）</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd">turbo build --graph</div>
+        <div class="desc">生成任务依赖图（可视化！）</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd">turbo daemon status</div>
+        <div class="desc">查看 turbo 守护进程状态</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">💡 turbo --dry-run 是调试神器</div>
+      <p>
+        不确定 turbo 会执行什么任务？先 <code>turbo build --dry-run</code> 看一下。
+        它会列出哪些任务会跑、哪些会走缓存、执行顺序是什么样的，零副作用。
+      </p>
+    </div>
+  </div>
+
+  <!-- ==================== 第6部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">6. 进阶视野：远程缓存</h2>
+
+    <p>
+      本地缓存已经很爽了，但远程缓存更"不讲武德"——
+    </p>
+
+    <div class="card">
+      <div class="card-title">🌐 什么是远程缓存？</div>
+      <p>
+        CI（比如你同事的机器）上构建成功后，把缓存上传到云端。<br>
+        <strong>你在本地拉代码后跑 build，直接命中远程缓存，零构建。</strong><br><br>
+        Vercel 提供免费的远程缓存服务（需要关联 Vercel 账号）：<br>
+        <code>npx turbo login</code> → <code>npx turbo link</code><br><br>
+        这就是为什么 Vercel 的 Next.js 项目构建可以那么快的原因之一。
+      </p>
+    </div>
+
+    <p>
+      对于入门阶段，<strong>本地缓存已经够用</strong>。远程缓存是团队协作时才需要考虑的事情，
+      这里作为视野拓展点到为止。
+    </p>
+  </div>
+
+  <!-- ==================== 工具对比 ==================== -->
+  <div class="section">
+    <h2 class="section-title">7. 工具速览：Turborepo vs Nx vs Lerna</h2>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>特性</th>
+          <th>Turborepo</th>
+          <th>Nx</th>
+          <th>Lerna</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>上手难度</td>
+          <td><span class="tag tag-green">低</span></td>
+          <td><span class="tag tag-yellow">中高</span></td>
+          <td><span class="tag tag-green">低</span></td>
+        </tr>
+        <tr>
+          <td>构建缓存</td>
+          <td><span class="tag tag-green">✅ 基于内容</span></td>
+          <td><span class="tag tag-green">✅ 基于内容</span></td>
+          <td>❌ 无内置</td>
+        </tr>
+        <tr>
+          <td>远程缓存</td>
+          <td><span class="tag tag-green">✅ Vercel 免费</span></td>
+          <td><span class="tag tag-green">✅ Nx Cloud</span></td>
+          <td>❌</td>
+        </tr>
+        <tr>
+          <td>代码生成</td>
+          <td>❌</td>
+          <td><span class="tag tag-green">✅ 强大的 generators</span></td>
+          <td>❌</td>
+        </tr>
+        <tr>
+          <td>依赖图可视化</td>
+          <td>CLI 文本图</td>
+          <td><span class="tag tag-green">✅ Web UI</span></td>
+          <td>❌</td>
+        </tr>
+        <tr>
+          <td>适合场景</td>
+          <td>前端为主的 Monorepo</td>
+          <td>大型全栈企业项目</td>
+          <td>小型包发布管理</td>
+        </tr>
+        <tr>
+          <td>推荐指数</td>
+          <td>⭐⭐⭐⭐⭐ 入门首选</td>
+          <td>⭐⭐⭐ 大团队</td>
+          <td>⭐⭐ 已被替代</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      <strong>结论：对于你的 Vue 3 + Node.js 项目，Turborepo 是最佳选择。</strong>
+      配置简单、速度快、和 pnpm 配合丝滑。
+    </p>
+  </div>
+
+  <!-- ==================== 练习 ==================== -->
+  <div class="section">
+    <h2 class="section-title">8. 练习 ✍️</h2>
+
+    <div class="exercise" id="ex1">
+      <h4>📝 练习 1：理解 dependsOn</h4>
+      <p>
+        <code>"dependsOn": ["^build"]</code> 中的 <code>^</code> 符号是什么意思？
+      </p>
+      <div style="margin:0.75rem 0;">
+        <label style="display:block;padding:0.4rem 0;cursor:pointer;">
+          <input type="radio" name="q1" value="a"> A. 表示正则表达式，匹配所有 build 开头的任务
+        </label>
+        <label style="display:block;padding:0.4rem 0;cursor:pointer;">
+          <input type="radio" name="q1" value="b"> B. 表示"向上游"——先执行当前包所依赖的包的 build
+        </label>
+        <label style="display:block;padding:0.4rem 0;cursor:pointer;">
+          <input type="radio" name="q1" value="c"> C. 表示这是一个可选的依赖
+        </label>
+        <label style="display:block;padding:0.4rem 0;cursor:pointer;">
+          <input type="radio" name="q1" value="d"> D. 表示优先级最高
+        </label>
+      </div>
+      <button class="quiz-btn" onclick="checkQ1()">提交答案</button>
+      <div class="quiz-feedback" id="q1-feedback"></div>
+    </div>
+
+    <div class="exercise" id="ex2">
+      <h4>📝 练习 2：缓存判断</h4>
+      <p>
+        你连续运行了两次 <code>turbo build</code>，两次之间<strong>没有修改任何代码</strong>。
+        第二次运行时，shared-utils 的 build 任务会怎样？
+      </p>
+      <div style="margin:0.75rem 0;">
+        <label style="display:block;padding:0.4rem 0;cursor:pointer;">
+          <input type="radio" name="q2" value="a"> A. 重新构建（因为 turbo 每次都会重新跑）
+        </label>
+        <label style="display:block;padding:0.4rem 0;cursor:pointer;">
+          <input type="radio" name="q2" value="b"> B. 被跳过（缓存命中），直接还原上次的产物
+        </label>
+        <label style="display:block;padding:0.4rem 0;cursor:pointer;">
+          <input type="radio" name="q2" value="c"> C. 取决于 shared-utils 内部配置
+        </label>
+      </div>
+      <button class="quiz-btn" onclick="checkQ2()">提交答案</button>
+      <div class="quiz-feedback" id="q2-feedback"></div>
+    </div>
+
+    <div class="exercise" id="ex3">
+      <h4>📝 练习 3：配置实战</h4>
+      <p>
+        你想给项目增加一个 <code>test</code> 任务，要求：<br>
+        ① test 必须在 build 之后执行<br>
+        ② test 的输出目录是 <code>coverage/</code><br>
+        在 turbo.json 中应该怎么写？
+      </p>
+      <textarea id="ex3-answer" placeholder='"test": { ... }'></textarea>
+      <button class="quiz-btn" onclick="checkEx3()">检查答案</button>
+      <div class="quiz-feedback" id="ex3-feedback"></div>
+    </div>
+
+    <div class="exercise" id="ex4">
+      <h4>📝 练习 4：工具选型</h4>
+      <p>
+        以下场景分别最适合用什么 Monorepo 工具？拖动匹配。
+      </p>
+      <div class="match-exercise" style="margin-top:0.75rem;">
+        <div class="match-col">
+          <h5>场景</h5>
+          <div class="match-item" data-pair="a">Vue 3 + Node.js 小型全栈项目，想快速接入</div>
+          <div class="match-item" data-pair="b">大型 Angular/React 企业项目，需要代码生成器</div>
+          <div class="match-item" data-pair="c">多个 npm 包需要统一发布和版本管理</div>
+        </div>
+        <div class="match-col">
+          <h5>工具</h5>
+          <div class="match-item" data-pair="a" onclick="matchPair(this, 'a')">Turborepo</div>
+          <div class="match-item" data-pair="b" onclick="matchPair(this, 'b')">Nx</div>
+          <div class="match-item" data-pair="c" onclick="matchPair(this, 'c')">Lerna / Changesets</div>
+        </div>
+      </div>
+      <div class="quiz-feedback" id="ex4-feedback"></div>
+    </div>
+  </div>
+
+  <script>
+    // 练习1
+    function checkQ1() {
+      const s = document.querySelector('input[name="q1"]:checked');
+      const fb = document.getElementById('q1-feedback');
+      if (!s) { fb.style.display='block'; fb.className='quiz-feedback wrong'; fb.textContent='请先选择一个答案！'; return; }
+      fb.style.display='block';
+      fb.className = s.value==='b' ? 'quiz-feedback correct' : 'quiz-feedback wrong';
+      fb.textContent = s.value==='b'
+        ? '✅ 正确！^ 表示向上游依赖查找，先执行当前包的依赖包的 build 任务。'
+        : '❌ 答案 B。^ 是 Turborepo 的特殊语法，表示先执行"这个包所依赖的其他包"的 build。';
+    }
+
+    // 练习2
+    function checkQ2() {
+      const s = document.querySelector('input[name="q2"]:checked');
+      const fb = document.getElementById('q2-feedback');
+      if (!s) { fb.style.display='block'; fb.className='quiz-feedback wrong'; fb.textContent='请先选！'; return; }
+      fb.style.display='block';
+      fb.className = s.value==='b' ? 'quiz-feedback correct' : 'quiz-feedback wrong';
+      fb.textContent = s.value==='b'
+        ? '✅ 正确！基于内容的缓存——输入没变，产物就不变，直接还原。'
+        : '❌ 答案 B。缓存命中的判断标准是内容哈希，不是时间。';
+    }
+
+    // 练习3
+    function checkEx3() {
+      const ans = document.getElementById('ex3-answer').value.trim();
+      const fb = document.getElementById('ex3-feedback');
+      if (!ans) { fb.style.display='block'; fb.className='quiz-feedback wrong'; fb.textContent='请先输入！'; return; }
+      fb.style.display='block';
+      const hasBuild = /build/.test(ans);
+      const hasCoverage = /coverage/.test(ans) || /output/.test(ans);
+      if (hasBuild && hasCoverage) {
+        fb.className='quiz-feedback correct';
+        fb.textContent = '✅ 正确！核心是 dependsOn: ["build"]（先跑 build）和 outputs: ["coverage/**"]（缓存产物）。';
+      } else if (hasBuild || hasCoverage) {
+        fb.className='quiz-feedback wrong';
+        fb.textContent = '⚠️ 还差一点：既要有 "dependsOn": ["build"]，也要有 "outputs": ["coverage/**"]。';
+      } else {
+        fb.className='quiz-feedback wrong';
+        fb.textContent = '❌ 格式：{ "dependsOn": ["build"], "outputs": ["coverage/**"] }';
+      }
+    }
+
+    // 练习4 — 匹配
+    let ex4Done = {a:false, b:false, c:false};
+    function matchPair(el, pair) {
+      if (ex4Done[pair]) return;
+      // 高亮当前选中的
+      document.querySelectorAll('.match-exercise .match-item').forEach(e => e.classList.remove('selected'));
+      const allSamePair = document.querySelectorAll(`.match-exercise .match-item[data-pair="${pair}"]`);
+      allSamePair.forEach(e => { e.classList.add('selected'); e.classList.add('matched'); });
+      ex4Done[pair] = true;
+
+      if (ex4Done.a && ex4Done.b && ex4Done.c) {
+        document.getElementById('ex4-feedback').style.display='block';
+        document.getElementById('ex4-feedback').className='quiz-feedback correct';
+        document.getElementById('ex4-feedback').textContent = '✅ 全部正确！Turborepo=轻量快速、Nx=企业全功能、Lerna/Changesets=版本发布。';
+      }
+    }
+  </script>
+
+  <!-- ==== 导航 ==== -->
+  <div class="nav-links">
+    <a href="./0003-shared-packages-typescript.html">← 上一课：共享包深入 & TypeScript</a>
+    <a href="./0005-versioning-changesets.html">下一课：版本管理 & Changesets →</a>
+  </div>
+
+  <div class="callout" style="margin-top: 2rem;">
+    <div class="callout-title">📚 推荐阅读 & 下一步</div>
+    <p>
+      官方文档：<a href="https://turborepo.dev/docs/getting-started" target="_blank">Turborepo Getting Started</a> — API 参考和高级配置。<br>
+      强烈建议在真实项目上跑一遍 <code>turbo build</code> 和 <code>turbo build --dry-run</code>，感受一下缓存的速度。<br>
+      下一课：如果共享包要发布到 npm 或被其他项目引用，怎么管理版本？—— <strong>Changesets 版本管理</strong>。
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

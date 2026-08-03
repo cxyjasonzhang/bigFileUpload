@@ -1,0 +1,312 @@
+/* === Monorepo 课程共享样式 === */
+/* 设计理念：干净、可读、适合打印 */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --text: #1a1a2e;
+  --text-secondary: #4a4a6a;
+  --bg: #fafafa;
+  --card-bg: #ffffff;
+  --accent: #3b82f6;
+  --accent-light: #eff6ff;
+  --border: #e5e7eb;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --max-width: 780px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* === 容器 === */
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* === 头部 === */
+.lesson-header {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.lesson-number {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.lesson-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+/* === 元信息 === */
+.meta {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* === 区块 === */
+.section {
+  margin-bottom: 2.5rem;
+}
+
+.section-title {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* === 段落 === */
+p {
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+}
+
+/* === 卡片 === */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.card-title {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.card p {
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+/* === 对比表 === */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0 1.5rem;
+  font-size: 0.92rem;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.compare-table thead {
+  background: var(--text);
+  color: #ffffff;
+}
+
+.compare-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.compare-table td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.compare-table tr:last-child td {
+  border-bottom: none;
+}
+
+.compare-table tr:hover td {
+  background: var(--accent-light);
+}
+
+/* === 代码块 === */
+pre {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin: 0.75rem 0 1.25rem;
+  box-shadow: var(--shadow);
+}
+
+code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.88em;
+  background: #e8e8f0;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* === 行内标签 === */
+.tag {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.15em 0.6em;
+  border-radius: 4px;
+  margin: 0 0.15em;
+}
+
+.tag-green {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.tag-red {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.tag-blue {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.tag-yellow {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* === 提示框 === */
+.callout {
+  border-left: 4px solid var(--accent);
+  background: var(--accent-light);
+  padding: 1rem 1.25rem;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 1rem 0 1.5rem;
+}
+
+.callout-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--accent);
+  margin-bottom: 0.3rem;
+}
+
+.callout p {
+  margin-bottom: 0;
+  font-size: 0.92rem;
+}
+
+.callout-warning {
+  border-left-color: var(--warning);
+  background: #fffbeb;
+}
+
+.callout-warning .callout-title {
+  color: #b45309;
+}
+
+/* === 列表 === */
+ul, ol {
+  margin: 0.5rem 0 1rem 1.5rem;
+  color: var(--text-secondary);
+}
+
+li {
+  margin-bottom: 0.4rem;
+}
+
+/* === 链接 === */
+a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+a:hover {
+  border-bottom-color: var(--accent);
+}
+
+/* === 导航 === */
+.nav-links {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--border);
+  font-size: 0.9rem;
+}
+
+/* === 响应式 === */
+@media print {
+  body {
+    font-size: 12pt;
+    color: #000;
+    background: #fff;
+  }
+  .container {
+    max-width: 100%;
+    padding: 0;
+  }
+  pre {
+    background: #f5f5f5;
+    color: #000;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 1rem 1rem 2rem;
+  }
+  .lesson-title {
+    font-size: 1.5rem;
+  }
+  .compare-table {
+    font-size: 0.8rem;
+  }
+}

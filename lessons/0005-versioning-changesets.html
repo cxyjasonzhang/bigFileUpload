@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第5课：Changesets 版本管理</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .workflow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1.25rem 0;
+    }
+    .wf-step {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.6rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .wf-step .num {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--accent);
+      margin-bottom: 0.15rem;
+    }
+    .wf-arrow { color: var(--accent); font-size: 1.1rem; font-weight: 700; }
+
+    .version-flow {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin: 1rem 0;
+      box-shadow: var(--shadow);
+    }
+    .version-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.4rem 0;
+      font-size: 0.9rem;
+    }
+    .version-tag {
+      padding: 0.2em 0.6em;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 0.82rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .version-tag.major { background: #fee2e2; color: #991b1b; }
+    .version-tag.minor { background: #fef3c7; color: #92400e; }
+    .version-tag.patch { background: #d1fae5; color: #065f46; }
+
+    .changeset-file {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      margin: 0.75rem 0;
+    }
+    .changeset-file .key { color: #89b4fa; }
+    .changeset-file .str { color: #a6e3a1; }
+    .changeset-file .comment { color: #6c7086; }
+
+    .scenario-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+      box-shadow: var(--shadow);
+    }
+    .scenario-card .q { font-weight: 600; color: var(--text); margin-bottom: 0.35rem; }
+    .scenario-card .a { color: var(--text-secondary); font-size: 0.9rem; }
+
+    .checklist {
+      list-style: none;
+      margin: 0.75rem 0;
+    }
+    .checklist li {
+      padding: 0.35rem 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    .checklist .check {
+      color: var(--success);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header class="lesson-header">
+    <div class="lesson-number">第 5 课</div>
+    <h1 class="lesson-title">Changesets 版本管理 — 给共享包装上"版本号日历"</h1>
+  </header>
+
+  <div class="meta">
+    <div class="meta-item">📅 2026-07-30</div>
+    <div class="meta-item">⏱️ 约 20 分钟</div>
+    <div class="meta-item">📦 版本管理</div>
+  </div>
+
+  <!-- ==================== 引入 ==================== -->
+  <div class="section">
+    <h2 class="section-title">0. 场景：你什么时候会头疼版本？</h2>
+
+    <div class="scenario-card">
+      <div class="q">🤔 场景一</div>
+      <div class="a">你在 shared-utils 里加了一个新函数，admin 和 server 都用了。怎么标记 shared-utils 版本从 1.0.0 升到多少？1.1.0？1.0.1？</div>
+    </div>
+
+    <div class="scenario-card">
+      <div class="q">😫 场景二</div>
+      <div class="a">你同时改了 shared-utils（新增功能）和 ui-components（修了个 bug），两个包都要发版，changelog 怎么写？手动维护？</div>
+    </div>
+
+    <div class="scenario-card">
+      <div class="q">😱 场景三</div>
+      <div class="a">同事问："上周这个函数怎么突然不能用了？"你翻 git log 翻了半小时才找到是哪次改坏的。</div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">🎯 Changesets 统一解决这三个问题</div>
+      <p>
+        <strong>自动决定版本号</strong>（该升 major/minor/patch 不用你纠结）<br>
+        <strong>自动生成 Changelog</strong>（每次改了什么一目了然）<br>
+        <strong>原子发布</strong>（一次操作发布所有改动的包，不会漏）
+      </p>
+    </div>
+  </div>
+
+  <!-- ==================== 第1部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">1. 版本号规则：Semver 速览</h2>
+
+    <p>Changesets 的版本升降基于 <strong>Semver（语义化版本）</strong>：</p>
+
+    <div class="version-flow">
+      <div class="version-row">
+        <span class="version-tag major">1.0.0</span>
+        <span>→</span>
+        <span class="version-tag major">2.0.0</span>
+        <span><strong>Major（主版本）</strong>：不兼容的 API 修改</span>
+      </div>
+      <div class="version-row">
+        <span class="version-tag minor">1.0.0</span>
+        <span>→</span>
+        <span class="version-tag minor">1.1.0</span>
+        <span><strong>Minor（次版本）</strong>：向下兼容的新功能</span>
+      </div>
+      <div class="version-row">
+        <span class="version-tag patch">1.0.0</span>
+        <span>→</span>
+        <span class="version-tag patch">1.0.1</span>
+        <span><strong>Patch（修订版）</strong>：向下兼容的 Bug 修复</span>
+      </div>
+    </div>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>改了什么</th>
+          <th>升哪个版本</th>
+          <th>changeset 标记</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>删了一个公开函数 / 改了参数签名</td>
+          <td><span class="version-tag major">major</span></td>
+          <td><code>major</code></td>
+        </tr>
+        <tr>
+          <td>新增了一个工具函数</td>
+          <td><span class="version-tag minor">minor</span></td>
+          <td><code>minor</code></td>
+        </tr>
+        <tr>
+          <td>修复了一个计算错误</td>
+          <td><span class="version-tag patch">patch</span></td>
+          <td><code>patch</code></td>
+        </tr>
+        <tr>
+          <td>只改了注释/文档/内部重构</td>
+          <td>不升版本</td>
+          <td>不创建 changeset</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ==================== 第2部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">2. Changesets 是什么</h2>
+
+    <div class="card">
+      <div class="card-title">一句话</div>
+      <p>
+        Changesets 是专门为 Monorepo 设计的<strong>版本管理和发布工具</strong>。
+        核心思想：<strong>"在提交代码的同时，记录这次改了什么 → 以后统一算版本、写 changelog"</strong>。
+      </p>
+    </div>
+
+    <p>它把版本管理拆成三个独立步骤：</p>
+
+    <div class="workflow">
+      <div class="wf-step">
+        <span class="num">Step 1</span>
+        提交改动时<br>加一个 changeset
+      </div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step">
+        <span class="num">Step 2</span>
+        集中处理<br>生成版本号
+      </div>
+      <div class="wf-arrow">→</div>
+      <div class="wf-step">
+        <span class="num">Step 3</span>
+        发布 +<br>生成 Changelog
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">💡 对比：不用 Changesets vs 用 Changesets</div>
+      <p>
+        <strong>不用：</strong>开发者改完代码 → 手动改 package.json 版本号 → 手动写 changelog → 容易忘、对不齐<br>
+        <strong>用了：</strong>开发者改完代码 → <code>pnpm changeset</code> 选版本类型 → 写完提交 → CI 自动算版本、写 changelog
+      </p>
+    </div>
+  </div>
+
+  <!-- ==================== 第3部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">3. 安装 &amp; 初始化</h2>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>安装 Changesets CLI</h4>
+        <pre><code>pnpm add -Dw @changesets/cli</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>初始化（它会在根目录创建 .changeset 目录）</h4>
+        <pre><code>pnpm changeset init</code></pre>
+        <p>之后项目里多了一个 <code>.changeset/</code> 目录：</p>
+        <pre><code>.changeset/
+├── config.json      ← 配置文件
+└── README.md        ← 说明文档</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>编辑配置文件</h4>
+        <div class="file-label">.changeset/config.json</div>
+        <pre><code>{
+  "$schema": "https://unpkg.com/@changesets/config@3/schema.json",
+  "commit": false,
+  "fixed": [],
+  "linked": [],
+  "access": "restricted",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": []
+}</code></pre>
+
+        <div class="card">
+          <div class="card-title">🔑 关键配置解释</div>
+          <ul>
+            <li><code>"commit": false</code> — changeset 文件不自动 commit（手动提交更可控）</li>
+            <li><code>"access": "restricted"</code> — 私有包；公开项目改 <code>"public"</code></li>
+            <li><code>"updateInternalDependencies": "patch"</code> — shared-utils 升 patch 时，依赖它的包也自动更新引用</li>
+            <li><code>"baseBranch": "main"</code> — 对比版本变更的目标分支</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 第4部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">4. 实战：完整工作流</h2>
+
+    <p>假设场景：你在 shared-utils 中新增了一个 <code>parseJSON</code> 函数。</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>写完代码后，创建一个 changeset</h4>
+        <pre><code>pnpm changeset</code></pre>
+        <p>终端会交互式问你三个问题：</p>
+        <div class="output-box">
+          <div class="label">🖥️ 终端交互过程</div>
+          <pre>🦋  Which packages would you like to include?
+    ◯ @my-monorepo/server
+    ● @my-monorepo/shared-utils    ← 空格选中
+
+🦋  Which packages would you like to include?
+    ◯ major
+    ● minor                         ← 新增功能选 minor
+
+🦋  Please enter a summary:
+    > 新增 parseJSON 工具函数       ← 简明描述</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Changesets 自动生成了一个文件</h4>
+        <div class="changeset-file">
+          <span class="comment">---</span><br>
+          <span class="str">"@my-monorepo/shared-utils"</span>: <span class="key">minor</span><br>
+          <span class="comment">---</span><br><br>
+          新增 parseJSON 工具函数
+        </div>
+        <p>文件存在 <code>.changeset/</code> 目录下，文件名是随机哈希（如 <code>purple-dogs-smile.md</code>）。<br>
+        把它和代码一起 git commit。</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>积累了一段时间后，统一消费所有 changesets</h4>
+        <pre><code>pnpm changeset version</code></pre>
+        <p>这个命令会：</p>
+        <ul class="checklist">
+          <li><span class="check">✅</span> 读取 <code>.changeset/</code> 下所有待处理的文件</li>
+          <li><span class="check">✅</span> 自动计算每个包应该升到的版本号</li>
+          <li><span class="check">✅</span> 更新各包 <code>package.json</code> 里的 version</li>
+          <li><span class="check">✅</span> 自动更新 workspace 依赖的版本（如 admin 里 shared-utils 的引用）</li>
+          <li><span class="check">✅</span> 删除已消费的 changeset 文件</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>发布（如果需要发布到 npm）</h4>
+        <pre><code>pnpm changeset publish</code></pre>
+        <p>
+          如果你的 shared-utils 需要发布到 npm registry（供外部项目使用），
+          这个命令会把版本更新过的包发布出去。<br>
+          <strong>对于内部 Monorepo（包只在仓库内使用），可以不执行这一步。</strong>
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 完整工作流总结</div>
+      <div class="workflow" style="margin-top:0.5rem;">
+        <div class="wf-step">写代码</div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step">pnpm changeset</div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step">git commit</div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step">pnpm changeset version</div>
+        <div class="wf-arrow">→</div>
+        <div class="wf-step">pnpm changeset publish</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 第5部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">5. 常用场景决策</h2>
+
+    <div class="scenario-card">
+      <div class="q">🔧 改了一个内部函数（外部 API 不变）</div>
+      <div class="a">
+        <strong>不创建 changeset。</strong>内部实现变更不影响使用者，版本号不需要变。
+      </div>
+    </div>
+
+    <div class="scenario-card">
+      <div class="q">🐛 修了一个 bug，但函数签名没变</div>
+      <div class="a">
+        创建 <strong>patch</strong> changeset。行为改变了（之前是错的），使用者需要知道。
+      </div>
+    </div>
+
+    <div class="scenario-card">
+      <div class="q">✨ 新增了一个函数，旧函数完全不受影响</div>
+      <div class="a">
+        创建 <strong>minor</strong> changeset。向下兼容的新功能。
+      </div>
+    </div>
+
+    <div class="scenario-card">
+      <div class="q">💥 改了 <code>formatDate</code> 的返回值类型</div>
+      <div class="a">
+        创建 <strong>major</strong> changeset。这是不兼容变更，任何依赖此函数的代码都可能坏掉。
+      </div>
+    </div>
+
+    <div class="scenario-card">
+      <div class="q">📦 同时改了 shared-utils（minor）和 ui-components（patch）</div>
+      <div class="a">
+        <code>pnpm changeset</code> 时用空格<strong>同时选中两个包</strong>，分别选择不同版本级别。<br>
+        一个 changeset 文件可以包含多个包的版本变更记录。
+      </div>
+    </div>
+
+    <div class="scenario-card">
+      <div class="q">🤖 想把 changeset 集成到 CI</div>
+      <div class="a">
+        常见方案：PR 合入 main 时触发 CI → 自动跑 <code>changeset version</code> → 如果有新版本，CI 自动提一个 "Release" PR → 审核后合入 → 触发 <code>changeset publish</code>。
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 第6部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">6. Changesets 自动生成的 Changelog 长什么样</h2>
+
+    <p>执行 <code>pnpm changeset version</code> 后，shared-utils 目录下会自动生成：</p>
+
+    <div class="file-label">packages/shared-utils/CHANGELOG.md（自动生成）</div>
+    <pre><code># @my-monorepo/shared-utils
+
+## 1.1.0
+
+### Minor Changes
+
+- 5142f8a: 新增 parseJSON 工具函数
+
+## 1.0.1
+
+### Patch Changes
+
+- a1b2c3d: 修复 formatFileSize 在 0 字节时显示错误的问题
+
+## 1.0.0
+
+### Major Changes
+
+- d4e5f6g: 初始发布，包含 formatDate、formatFileSize、greet、add</code></pre>
+
+    <div class="callout">
+      <div class="callout-title">💡 比你手写 changelog 好在哪</div>
+      <p>
+        • 永远不会忘（写代码时顺手加 changeset）<br>
+        • 格式统一（全项目一个风格）<br>
+        • 和 git commit 关联（每个条目都有 commit hash）<br>
+        • CI 友好（可以自动生成 Release Notes）
+      </p>
+    </div>
+  </div>
+
+  <!-- ==================== 第7部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">7. 给根 package.json 加便捷脚本</h2>
+
+    <div class="file-label">package.json</div>
+    <pre><code>{
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "turbo build && changeset publish"
+  }
+}</code></pre>
+
+    <p>之后直接：</p>
+    <div class="cmd-ref">
+      <div class="cmd-card">
+        <div class="cmd">pnpm changeset</div>
+        <div class="desc">创建一个新的 changeset</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd">pnpm version</div>
+        <div class="desc">消费所有 changeset，更新版本号</div>
+      </div>
+      <div class="cmd-card">
+        <div class="cmd">pnpm changeset status</div>
+        <div class="desc">查看当前有哪些待处理的 changeset</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 练习 ==================== -->
+  <div class="section">
+    <h2 class="section-title">8. 练习 ✍️</h2>
+
+    <div class="exercise" id="ex1">
+      <h4>📝 练习 1：选版本号</h4>
+      <p>以下改动分别应该选哪个版本级别？</p>
+
+      <div style="margin:0.75rem 0;">
+        <p><strong>①</strong> 给 shared-utils 新增了 <code>debounce</code> 和 <code>throttle</code> 两个函数</p>
+        <label style="display:inline-block;margin-right:1.5rem;cursor:pointer;">
+          <input type="radio" name="q1a" value="major"> major
+        </label>
+        <label style="display:inline-block;margin-right:1.5rem;cursor:pointer;">
+          <input type="radio" name="q1a" value="minor"> minor
+        </label>
+        <label style="display:inline-block;cursor:pointer;">
+          <input type="radio" name="q1a" value="patch"> patch
+        </label>
+      </div>
+
+      <div style="margin:0.75rem 0;">
+        <p><strong>②</strong> 修复了 <code>formatFileSize</code> 在处理负数时崩溃的 bug</p>
+        <label style="display:inline-block;margin-right:1.5rem;cursor:pointer;">
+          <input type="radio" name="q1b" value="major"> major
+        </label>
+        <label style="display:inline-block;margin-right:1.5rem;cursor:pointer;">
+          <input type="radio" name="q1b" value="minor"> minor
+        </label>
+        <label style="display:inline-block;cursor:pointer;">
+          <input type="radio" name="q1b" value="patch"> patch
+        </label>
+      </div>
+
+      <div style="margin:0.75rem 0;">
+        <p><strong>③</strong> 把 <code>formatDate</code> 的返回值从 <code>string</code> 改成了 <code>Date</code> 对象</p>
+        <label style="display:inline-block;margin-right:1.5rem;cursor:pointer;">
+          <input type="radio" name="q1c" value="major"> major
+        </label>
+        <label style="display:inline-block;margin-right:1.5rem;cursor:pointer;">
+          <input type="radio" name="q1c" value="minor"> minor
+        </label>
+        <label style="display:inline-block;cursor:pointer;">
+          <input type="radio" name="q1c" value="patch"> patch
+        </label>
+      </div>
+
+      <button class="quiz-btn" onclick="checkEx1()">检查答案</button>
+      <div class="quiz-feedback" id="ex1-feedback"></div>
+    </div>
+
+    <div class="exercise" id="ex2">
+      <h4>📝 练习 2：工作流排序</h4>
+      <p>以下 Changesets 标准工作流的 4 个步骤，正确的顺序是什么？</p>
+      <div style="margin:0.75rem 0;">
+        <label style="display:block;padding:0.3rem 0;cursor:pointer;">
+          <input type="radio" name="q2" value="a"> A. 创建 changeset → 写代码 → version → publish
+        </label>
+        <label style="display:block;padding:0.3rem 0;cursor:pointer;">
+          <input type="radio" name="q2" value="b"> B. 写代码 → 创建 changeset → version → publish
+        </label>
+        <label style="display:block;padding:0.3rem 0;cursor:pointer;">
+          <input type="radio" name="q2" value="c"> C. 创建 changeset → version → 写代码 → publish
+        </label>
+        <label style="display:block;padding:0.3rem 0;cursor:pointer;">
+          <input type="radio" name="q2" value="d"> D. version → 写代码 → 创建 changeset → publish
+        </label>
+      </div>
+      <button class="quiz-btn" onclick="checkEx2()">检查答案</button>
+      <div class="quiz-feedback" id="ex2-feedback"></div>
+    </div>
+
+    <div class="exercise" id="ex3">
+      <h4>📝 练习 3：实战模拟</h4>
+      <p>
+        你给 ui-components 新增了一个 Modal 弹窗组件（向下兼容），同时修复了 shared-utils 中 formatDate 的一个边界 bug。
+      </p>
+      <p>运行 <code>pnpm changeset</code> 时，终端会问你哪些问题？你分别怎么答？</p>
+      <textarea id="ex3-answer" placeholder="描述交互过程和你的选择..."></textarea>
+      <button class="quiz-btn" onclick="checkEx3()">检查答案</button>
+      <div class="quiz-feedback" id="ex3-feedback"></div>
+    </div>
+  </div>
+
+  <script>
+    function checkEx1() {
+      const a = document.querySelector('input[name="q1a"]:checked');
+      const b = document.querySelector('input[name="q1b"]:checked');
+      const c = document.querySelector('input[name="q1c"]:checked');
+      const fb = document.getElementById('ex1-feedback');
+      if (!a || !b || !c) { fb.style.display='block'; fb.className='quiz-feedback wrong'; fb.textContent='请完成全部三小题！'; return; }
+      fb.style.display='block';
+      const ok = a.value==='minor' && b.value==='patch' && c.value==='major';
+      fb.className = ok ? 'quiz-feedback correct' : 'quiz-feedback wrong';
+      if (ok) {
+        fb.textContent = '✅ 全对！①新增功能=minor ②修bug=patch ③改返回值类型=major（不兼容变更）。';
+      } else {
+        let msg = '❌ ';
+        if (a.value!=='minor') msg += '①新增功能是 minor；';
+        if (b.value!=='patch') msg += '②修 bug 是 patch；';
+        if (c.value!=='major') msg += '③改类型签名是 major。';
+        fb.textContent = msg;
+      }
+    }
+
+    function checkEx2() {
+      const s = document.querySelector('input[name="q2"]:checked');
+      const fb = document.getElementById('ex2-feedback');
+      if (!s) { fb.style.display='block'; fb.className='quiz-feedback wrong'; fb.textContent='请先选！'; return; }
+      fb.style.display='block';
+      fb.className = s.value==='b' ? 'quiz-feedback correct' : 'quiz-feedback wrong';
+      fb.textContent = s.value==='b'
+        ? '✅ 正确顺序：写代码 → 创建 changeset → version（算版本号）→ publish（发布）。'
+        : '❌ 正确顺序是 B：先写代码，再创建 changeset，然后统一 version，最后 publish。';
+    }
+
+    function checkEx3() {
+      const ans = document.getElementById('ex3-answer').value.trim();
+      const fb = document.getElementById('ex3-feedback');
+      if (!ans) { fb.style.display='block'; fb.className='quiz-feedback wrong'; fb.textContent='请先输入你的答案！'; return; }
+      fb.style.display='block';
+      const hasBoth = /ui-components|ui/i.test(ans) && /shared-utils|shared/i.test(ans);
+      const hasMinor = /minor/.test(ans);
+      const hasPatch = /patch/.test(ans);
+      if (hasBoth && hasMinor && hasPatch) {
+        fb.className='quiz-feedback correct';
+        fb.textContent = '✅ 正确！选择两个包 → ui-components 选 minor → shared-utils 选 patch → 写描述。';
+      } else if (hasBoth) {
+        fb.className='quiz-feedback wrong';
+        fb.textContent = '⚠️ 包选对了！但 ui-components 新增组件用 minor，shared-utils 修 bug 用 patch。';
+      } else {
+        fb.className='quiz-feedback wrong';
+        fb.textContent = '💡 提示：同时选中两个包，ui-components=minor，shared-utils=patch。';
+      }
+    }
+  </script>
+
+  <!-- ==== 导航 ==== -->
+  <div class="nav-links">
+    <a href="./0004-turborepo-intro.html">← 上一课：Turborepo 入门</a>
+    <a href="../reference/glossary.html">📖 术语速查表 →</a>
+  </div>
+
+  <!-- ==== 完工总结 ==== -->
+  <div class="section" style="margin-top: 2rem;">
+    <h2 class="section-title">🎉 恭喜！Monorepo 入门五课完结</h2>
+
+    <div class="card">
+      <div class="card-title">你的工具箱</div>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>工具</th>
+            <th>解决什么问题</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>pnpm Workspace</strong></td>
+            <td>多包依赖管理、本地链接、统一安装</td>
+          </tr>
+          <tr>
+            <td><strong>TypeScript（三层配置）</strong></td>
+            <td>跨包类型安全、IDE 智能提示</td>
+          </tr>
+          <tr>
+            <td><strong>Turborepo</strong></td>
+            <td>任务编排、构建缓存、秒级重构建</td>
+          </tr>
+          <tr>
+            <td><strong>Changesets</strong></td>
+            <td>版本管理、Changelog 自动生成</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top:1rem;">
+      从零到一，你已经掌握了现代前端 Monorepo 的完整知识体系。
+      搭建你自己的项目时，你可以随时回来看这些课程和 <a href="../reference/glossary.html">术语速查表</a>。
+    </p>
+
+    <div class="callout">
+      <div class="callout-title">🚀 进阶方向（自行探索）</div>
+      <p>
+        • Turborepo 远程缓存（团队协作秒级 CI）<br>
+        • Nx 的代码生成器（自动生成组件/模块脚手架）<br>
+        • 共享 ESLint/Prettier 配置包<br>
+        • CI/CD 集成（GitHub Actions 自动 changeset version + publish）<br>
+        • 依赖可视化（turbo --graph / Nx graph）
+      </p>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top: 1.5rem;">
+    <div class="callout-title">📚 推荐阅读</div>
+    <p>
+      官方文档：<a href="https://github.com/changesets/changesets" target="_blank">Changesets GitHub</a><br>
+      Semver 规范：<a href="https://semver.org/lang/zh-CN/" target="_blank">语义化版本 2.0.0</a><br>
+      有疑问随时问我——你的专属 Monorepo 助教 😊
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

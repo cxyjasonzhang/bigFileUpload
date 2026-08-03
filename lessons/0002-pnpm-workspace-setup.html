@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第2课：pnpm Workspace 从零配置</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    /* 步骤编号 */
+    .step {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+      align-items: flex-start;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 2.2rem;
+      height: 2.2rem;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-top: 0.1rem;
+    }
+    .step-body {
+      flex: 1;
+    }
+    .step-body h4 {
+      font-size: 1rem;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+    .step-body p {
+      font-size: 0.93rem;
+      margin-bottom: 0.4rem;
+    }
+
+    /* 文件标注 */
+    .file-label {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #1e1e2e;
+      color: #89b4fa;
+      padding: 0.15em 0.5em;
+      border-radius: 4px 4px 0 0;
+      margin-bottom: -2px;
+      letter-spacing: 0.03em;
+    }
+    .file-label + pre {
+      margin-top: 0;
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+
+    /* 输出预期 */
+    .output-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin: 0.75rem 0 1.25rem;
+    }
+    .output-box .label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #166534;
+      margin-bottom: 0.4rem;
+    }
+    .output-box pre {
+      background: #f0fdf4;
+      color: #166534;
+      padding: 0;
+      margin: 0;
+      box-shadow: none;
+      font-size: 0.85rem;
+    }
+
+    /* 练习区 */
+    .exercise {
+      background: var(--card-bg);
+      border: 2px dashed var(--accent);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .exercise h4 {
+      font-size: 1rem;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+    .exercise p {
+      font-size: 0.9rem;
+    }
+    .exercise textarea {
+      width: 100%;
+      height: 6rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+      color: var(--text);
+      resize: vertical;
+      margin: 0.5rem 0;
+    }
+    .exercise .hint {
+      display: none;
+      margin-top: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: #fffbeb;
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      color: #92400e;
+    }
+
+    /* 命令速查 */
+    .cmd-ref {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+    @media (max-width: 600px) {
+      .cmd-ref { grid-template-columns: 1fr; }
+    }
+    .cmd-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      box-shadow: var(--shadow);
+    }
+    .cmd-card .cmd {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 0.2rem;
+    }
+    .cmd-card .desc {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ==== 头部 ==== -->
+  <header class="lesson-header">
+    <div class="lesson-number">第 2 课</div>
+    <h1 class="lesson-title">pnpm Workspace 从零配置 — 搭建你的第一个 Monorepo</h1>
+  </header>
+
+  <div class="meta">
+    <div class="meta-item">📅 2026-07-28</div>
+    <div class="meta-item">⏱️ 约 20 分钟</div>
+    <div class="meta-item">🛠️ 动手实战</div>
+  </div>
+
+  <!-- ==== 目标 ==== -->
+  <div class="section">
+    <h2 class="section-title">0. 本课目标</h2>
+    <p>在这一课中，你将从零开始，用 <strong>pnpm Workspace</strong> 搭建一个 Monorepo 项目，结构如下：</p>
+
+    <pre><code>my-monorepo/
+├── pnpm-workspace.yaml      ← 核心：声明工作区
+├── package.json              ← 根配置
+├── apps/
+│   ├── admin/                ← Vue 3 前端（Vite）
+│   └── server/               ← Node.js 后端
+└── packages/
+    └── shared-utils/         ← 共享工具包</code></pre>
+
+    <p>学完后，你将能够独立创建和配置任意规模的 pnpm Monorepo 项目。</p>
+  </div>
+
+  <!-- ==== 前备知识检查 ==== -->
+  <div class="callout">
+    <div class="callout-title">✅ 开始前确认</div>
+    <p>
+      确保你的环境中有 <strong>Node.js ≥ 18</strong> 和 <strong>pnpm ≥ 8</strong>。终端运行
+      <code>pnpm --version</code> 检查。如果还没装 pnpm：
+      <code>npm install -g pnpm</code>。
+    </p>
+  </div>
+
+  <!-- ==================== 步骤 1 ==================== -->
+  <div class="section">
+    <h2 class="section-title">1. 初始化根项目</h2>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>创建项目目录并初始化</h4>
+        <p>创建一个空目录作为 Monorepo 的根目录，然后用 <code>pnpm init</code> 生成根 <code>package.json</code>。</p>
+
+        <pre><code>mkdir my-monorepo && cd my-monorepo
+pnpm init</code></pre>
+
+        <p>编辑 <code>package.json</code>，确保设置 <code>"private": true</code>（防止根目录被误发布到 npm）：</p>
+
+        <div class="file-label">my-monorepo/package.json</div>
+        <pre><code>{
+  "name": "my-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "我的第一个 Monorepo 项目"
+}</code></pre>
+
+        <div class="callout callout-warning">
+          <div class="callout-title">⚠️ private: true 很重要</div>
+          <p>
+            根目录的 <code>package.json</code> 不是给 npm 发布的，它是给 pnpm 用的"组织者"。
+            忘记加 <code>"private": true</code> 可能导致误 <code>pnpm publish</code>。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 步骤 2 ==================== -->
+  <div class="section">
+    <h2 class="section-title">2. 创建 pnpm-workspace.yaml</h2>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>这是 Monorepo 的"核心配置文件"</h4>
+        <p><code>pnpm-workspace.yaml</code> 告诉 pnpm 哪些目录包含子项目（包）。没有它，pnpm 就不知道这是一个 Monorepo。</p>
+
+        <div class="file-label">my-monorepo/pnpm-workspace.yaml</div>
+        <pre><code>packages:
+  - 'apps/*'        # apps 目录下的所有一级子目录
+  - 'packages/*'    # packages 目录下的所有一级子目录</code></pre>
+
+        <div class="card">
+          <div class="card-title">💡 配置语法说明</div>
+          <ul>
+            <li><code>'apps/*'</code>：匹配 <code>apps/</code> 下的所有一级子目录（如 <code>apps/admin</code>、<code>apps/server</code>）</li>
+            <li><code>'packages/**'</code>：匹配 <code>packages/</code> 下的所有子目录（包括嵌套）</li>
+            <li><code>'!**/test/**'</code>：排除匹配（感叹号开头表示排除）</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 步骤 3 ==================== -->
+  <div class="section">
+    <h2 class="section-title">3. 创建子项目（Package）</h2>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>创建三个子包：admin、server、shared-utils</h4>
+
+        <p><strong>① 共享工具包 — packages/shared-utils</strong></p>
+        <pre><code>mkdir -p packages/shared-utils/src
+cd packages/shared-utils && pnpm init</code></pre>
+
+        <div class="file-label">packages/shared-utils/package.json</div>
+        <pre><code>{
+  "name": "@my-monorepo/shared-utils",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts"
+}</code></pre>
+
+        <div class="file-label">packages/shared-utils/src/index.ts</div>
+        <pre><code>/** 共享工具函数 */
+
+/** 格式化问候语 */
+export function greet(name: string): string {
+  return `你好，${name}！欢迎来到 Monorepo。`;
+}
+
+/** 两数相加 */
+export function add(a: number, b: number): number {
+  return a + b;
+}</code></pre>
+
+        <p style="margin-top: 1.5rem;"><strong>② Vue 3 前端应用 — apps/admin</strong></p>
+        <p>用 Vite 快速创建 Vue 3 项目：</p>
+        <pre><code>pnpm create vite apps/admin --template vue-ts</code></pre>
+
+        <div class="callout">
+          <div class="callout-title">💡 关于 apps/admin/package.json</div>
+          <p>
+            Vite 脚手架会自动生成 <code>package.json</code>，其中 <code>name: "admin"</code>。
+            你也可以改成 <code>"@my-monorepo/admin"</code>，保持命名统一。当前用默认名也没问题。
+          </p>
+        </div>
+
+        <p style="margin-top: 1.5rem;"><strong>③ Node.js 后端应用 — apps/server</strong></p>
+        <pre><code>mkdir -p apps/server/src
+cd apps/server && pnpm init</code></pre>
+
+        <div class="file-label">apps/server/package.json</div>
+        <pre><code>{
+  "name": "@my-monorepo/server",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  }
+}</code></pre>
+
+        <div class="file-label">apps/server/src/index.js</div>
+        <pre><code>const http = require('http');
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ message: 'Hello from Monorepo server!' }));
+});
+
+server.listen(3000, () => {
+  console.log('Server running at http://localhost:3000');
+});</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 步骤 4 ==================== -->
+  <div class="section">
+    <h2 class="section-title">4. 安装依赖 — 见证 pnpm 的魔法</h2>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>回到根目录，一条命令安装所有子项目的依赖</h4>
+        <pre><code>cd my-monorepo
+pnpm install</code></pre>
+
+        <p>pnpm 会：</p>
+        <ul>
+          <li>扫描 <code>pnpm-workspace.yaml</code> 找到所有子项目</li>
+          <li>分别安装每个子项目 <code>package.json</code> 中的依赖</li>
+          <li>用<strong>硬链接</strong>存储，相同的包在磁盘上只存一份</li>
+          <li>为 workspace 内的包建立<strong>符号链接</strong>，让它们能互相引用</li>
+        </ul>
+
+        <div class="card">
+          <div class="card-title">🔬 验证一下</div>
+          <p>
+            运行 <code>pnpm list --depth=0 -r</code> 可以查看所有子项目的依赖。<br>
+            你会发现 <code>node_modules</code> 里出现了以 <code>@my-monorepo</code> 开头的
+            <strong>符号链接</strong>（symlink），指向工作区内的其他包。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 步骤 5 ==================== -->
+  <div class="section">
+    <h2 class="section-title">5. workspace:* 协议 — 本地包互相引用</h2>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>让 server 引用 shared-utils</h4>
+        <p>
+          不需要发布到 npm、不需要 <code>npm link</code>，只需要一条命令：
+        </p>
+
+        <pre><code>pnpm add @my-monorepo/shared-utils --filter @my-monorepo/server</code></pre>
+
+        <p>这会在 <code>apps/server/package.json</code> 中添加：</p>
+
+        <div class="file-label">apps/server/package.json（自动更新后）</div>
+        <pre><code>{
+  "dependencies": {
+    "@my-monorepo/shared-utils": "workspace:*"
+  }
+}</code></pre>
+
+        <div class="card">
+          <div class="card-title">🔍 workspace:* 是什么意思？</div>
+          <p>
+            <code>workspace:*</code> 是 pnpm 特有的<strong>协议</strong>（protocol）。
+            它告诉 pnpm：<strong>"这个包就在当前工作区里，不要去 npm registry 下载"</strong>。
+            pnpm 会把 <code>@my-monorepo/shared-utils</code> 软链接到
+            <code>packages/shared-utils</code> 的实际目录。
+          </p>
+          <p style="margin-top: 0.5rem;">
+            常用的 workspace 协议写法：<br>
+            <code>workspace:*</code> — 直接用工作区最新版<br>
+            <code>workspace:^1.0.0</code> — 要求匹配 1.x.x 版本<br>
+            <code>workspace:./packages/shared-utils</code> — 用相对路径指定（较少用）
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 步骤 6 ==================== -->
+  <div class="section">
+    <h2 class="section-title">6. 统一脚本 — 一键运行所有项目</h2>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <h4>在根目录的 package.json 中添加统一脚本</h4>
+
+        <div class="file-label">my-monorepo/package.json</div>
+        <pre><code>{
+  "name": "my-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "build": "pnpm -r run build",
+    "dev:admin": "pnpm --filter admin run dev",
+    "dev:server": "pnpm --filter @my-monorepo/server run dev"
+  }
+}</code></pre>
+
+        <div class="card">
+          <div class="card-title">📖 命令参数速查</div>
+          <div class="cmd-ref">
+            <div class="cmd-card">
+              <div class="cmd">pnpm -r run dev</div>
+              <div class="desc">递归执行所有包的 dev 脚本</div>
+            </div>
+            <div class="cmd-card">
+              <div class="cmd">pnpm --filter admin run dev</div>
+              <div class="desc">只对 admin 包执行 dev</div>
+            </div>
+            <div class="cmd-card">
+              <div class="cmd">pnpm -r --parallel run dev</div>
+              <div class="desc">并行运行所有包的 dev 脚本</div>
+            </div>
+            <div class="cmd-card">
+              <div class="cmd">pnpm add lodash -w</div>
+              <div class="desc">给根项目安装依赖（-w 允许）</div>
+            </div>
+            <div class="cmd-card">
+              <div class="cmd">pnpm add axios --filter server</div>
+              <div class="desc">给 server 包安装 axios</div>
+            </div>
+            <div class="cmd-card">
+              <div class="cmd">pnpm -r update</div>
+              <div class="desc">更新所有包的依赖</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <div class="callout-title">⚠️ 易错点</div>
+          <p>
+            在根目录直接 <code>pnpm add xxx</code> 会报错（因为 <code>private: true</code>），
+            需要加 <code>-w</code>（<code>--workspace-root</code>）才可以给根项目装依赖。
+            通常只在根目录装 <strong>开发工具</strong>（TypeScript、ESLint、Prettier 等全局配置）。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 完整结构回顾 ==================== -->
+  <div class="section">
+    <h2 class="section-title">7. 完整项目结构回顾</h2>
+
+    <pre><code>my-monorepo/
+├── pnpm-workspace.yaml         ← pnpm：这些是我的子项目
+├── package.json                ← root: private + 统一脚本
+├── pnpm-lock.yaml              ← 全局锁文件
+├── node_modules/               ← 所有包的依赖（硬链接）
+│   └── @my-monorepo/           ← 工作区内部链接（符号链接）
+│       ├── shared-utils  →  ../../packages/shared-utils
+│       └── server        →  ../../apps/server
+│
+├── apps/
+│   ├── admin/                  ← Vue 3 + Vite 前端
+│   │   ├── package.json
+│   │   ├── vite.config.ts
+│   │   ├── tsconfig.json
+│   │   └── src/
+│   └── server/                 ← Node.js 后端
+│       ├── package.json        ← 依赖了 @my-monorepo/shared-utils
+│       └── src/
+│           └── index.js
+│
+└── packages/
+    └── shared-utils/           ← 共享工具
+        ├── package.json        ← name: @my-monorepo/shared-utils
+        └── src/
+            └── index.ts</code></pre>
+  </div>
+
+  <!-- ==================== 练习 ==================== -->
+  <div class="section">
+    <h2 class="section-title">8. 动手练习 ✍️</h2>
+
+    <div class="exercise" id="ex1">
+      <h4>📝 练习 1：写出 workspace 配置</h4>
+      <p>
+        如果你想把 <code>components/</code> 和 <code>services/</code> 目录下的所有一级子目录
+        也加入工作区，<code>pnpm-workspace.yaml</code> 应该怎么写？<br>
+        <small>（提示：参考第 2 步的语法）</small>
+      </p>
+      <textarea id="ex1-answer" placeholder="packages:"></textarea>
+      <button class="quiz-btn" onclick="checkEx1()">检查答案</button>
+      <button class="quiz-btn" style="background:#6b7280;margin-left:0.5rem;" onclick="toggleHint('ex1-hint')">需要提示</button>
+      <div class="quiz-feedback" id="ex1-feedback"></div>
+      <div class="hint" id="ex1-hint">
+        💡 <code>pnpm-workspace.yaml</code> 中的 <code>packages</code> 是数组，每个元素是 glob 模式。<br>
+        加入 components 和 services：在已有基础上追加两行即可。
+      </div>
+    </div>
+
+    <div class="exercise" id="ex2">
+      <h4>📝 练习 2：写出正确的 pnpm 命令</h4>
+      <p>
+        你只想给 <code>apps/admin</code> 这个子项目安装 <code>axios</code> 依赖，应该执行什么命令？
+      </p>
+      <textarea id="ex2-answer" placeholder="pnpm ..."></textarea>
+      <button class="quiz-btn" onclick="checkEx2()">检查答案</button>
+      <button class="quiz-btn" style="background:#6b7280;margin-left:0.5rem;" onclick="toggleHint('ex2-hint')">需要提示</button>
+      <div class="quiz-feedback" id="ex2-feedback"></div>
+      <div class="hint" id="ex2-hint">
+        💡 使用 <code>--filter</code> 参数指定目标包名，包名在子项目的 <code>package.json</code> 中定义。
+      </div>
+    </div>
+
+    <div class="exercise" id="ex3">
+      <h4>📝 练习 3：workspace 协议</h4>
+      <p>
+        <code>apps/server</code> 想要引用本地 <code>packages/shared-utils</code>，
+        在 <code>dependencies</code> 中应该写什么？
+      </p>
+      <textarea id="ex3-answer" placeholder='"@my-monorepo/shared-utils": "..."'></textarea>
+      <button class="quiz-btn" onclick="checkEx3()">检查答案</button>
+      <div class="quiz-feedback" id="ex3-feedback"></div>
+    </div>
+  </div>
+
+  <script>
+    function checkEx1() {
+      const ans = document.getElementById('ex1-answer').value.trim();
+      const fb = document.getElementById('ex1-feedback');
+      if (!ans) { fb.style.display='block'; fb.className='quiz-feedback wrong'; fb.textContent='请先输入答案！'; return; }
+      fb.style.display='block';
+      // 检查是否包含核心内容
+      const hasComponents = /components\/?\*/.test(ans);
+      const hasServices = /services\/?\*/.test(ans);
+      if (hasComponents && hasServices) {
+        fb.className='quiz-feedback correct';
+        fb.textContent = '✅ 正确！在 packages 数组中加上 \'components/*\' 和 \'services/*\' 即可。';
+      } else if (hasComponents || hasServices) {
+        fb.className='quiz-feedback wrong';
+        fb.textContent = '⚠️ 还差一个目录哦！需要同时加上 components/* 和 services/*。';
+      } else {
+        fb.className='quiz-feedback wrong';
+        fb.textContent = '❌ 再想想：用 glob 模式 \'components/*\' 和 \'services/*\' 声明这两个目录。';
+      }
+    }
+
+    function checkEx2() {
+      const ans = document.getElementById('ex2-answer').value.trim();
+      const fb = document.getElementById('ex2-feedback');
+      if (!ans) { fb.style.display='block'; fb.className='quiz-feedback wrong'; fb.textContent='请先输入答案！'; return; }
+      fb.style.display='block';
+      const hasFilter = /--filter/.test(ans) || /-F\b/.test(ans);
+      const hasAdmin = /admin/.test(ans);
+      const hasAxios = /axios/.test(ans);
+      const hasAdd = /add\b/.test(ans) || /install\b/.test(ans);
+      if (hasFilter && hasAdmin && hasAxios && hasAdd) {
+        fb.className='quiz-feedback correct';
+        fb.textContent = '✅ 正确！pnpm add axios --filter admin 或 pnpm --filter admin add axios。';
+      } else if (hasFilter || hasAdmin) {
+        fb.className='quiz-feedback wrong';
+        fb.textContent = '⚠️ 格式接近了，检查一下：需要包含 add、axios、--filter 和 admin 四个关键词。';
+      } else {
+        fb.className='quiz-feedback wrong';
+        fb.textContent = '❌ 提示：使用 pnpm add axios --filter admin 这样的格式。';
+      }
+    }
+
+    function checkEx3() {
+      const ans = document.getElementById('ex3-answer').value.trim();
+      const fb = document.getElementById('ex3-feedback');
+      if (!ans) { fb.style.display='block'; fb.className='quiz-feedback wrong'; fb.textContent='请先输入答案！'; return; }
+      fb.style.display='block';
+      if (/workspace:\*/.test(ans)) {
+        fb.className='quiz-feedback correct';
+        fb.textContent = '✅ 正确！用 "workspace:*" 协议，pnpm 就知道从本地工作区解析这个包。';
+      } else if (/workspace/.test(ans)) {
+        fb.className='quiz-feedback wrong';
+        fb.textContent = '⚠️ 方向对了！但写法是 "workspace:*"（注意是 workspace，不是 work），用于匹配工作区最新版本。';
+      } else {
+        fb.className='quiz-feedback wrong';
+        fb.textContent = '❌ 提示：使用 pnpm 的 workspace 协议，写法为 "workspace:*"。';
+      }
+    }
+
+    function toggleHint(id) {
+      const el = document.getElementById(id);
+      el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    }
+  </script>
+
+  <!-- ==== 导航 ==== -->
+  <div class="nav-links">
+    <a href="./0001-monorepo-concepts.html">← 上一课：Monorepo 概念入门</a>
+    <a href="./0003-shared-packages.html">下一课：共享包深入 & 实战 →</a>
+  </div>
+
+  <!-- ==== 页脚 ==== -->
+  <div class="callout" style="margin-top: 2rem;">
+    <div class="callout-title">📚 推荐阅读 & 下一步</div>
+    <p>
+      官方文档：<a href="https://pnpm.io/zh/workspaces" target="_blank">pnpm Workspace</a> — 这是你之后配置 Monorepo 时的日常参考。<br>
+      <strong>动手实践：</strong>跟着本课步骤，在终端里从头搭建一遍。遇到报错就排查——真实项目也是这样成长的 😊<br>
+      如有任何疑问，随时问我！
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

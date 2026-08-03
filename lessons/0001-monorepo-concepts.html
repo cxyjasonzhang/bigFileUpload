@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第1课：Monorepo 概念入门</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    /* 本课特有：可视化结构图 */
+    .structure-viz {
+      display: flex;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+      flex-wrap: wrap;
+    }
+    .structure-card {
+      flex: 1;
+      min-width: 280px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: var(--shadow);
+    }
+    .structure-card h4 {
+      font-size: 0.95rem;
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }
+    .tree {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.8;
+      color: var(--text-secondary);
+    }
+    .tree .dir { color: var(--accent); font-weight: 600; }
+    .tree .file { color: var(--text-secondary); }
+    .tree .comment { color: #9ca3af; }
+
+    /* 比喻卡片 */
+    .metaphor {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      padding: 1.5rem;
+      border-radius: var(--radius);
+      margin: 1.5rem 0;
+    }
+    .metaphor h4 {
+      font-size: 1.05rem;
+      margin-bottom: 0.5rem;
+    }
+    .metaphor p {
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 0;
+    }
+
+    /* 测验 */
+    .quiz {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin: 2rem 0;
+      box-shadow: var(--shadow);
+    }
+    .quiz-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+    .quiz q {
+      display: block;
+      margin-bottom: 0.75rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .quiz-options label {
+      display: block;
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.35rem;
+      background: var(--bg);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.2s;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    .quiz-options label:hover {
+      background: var(--accent-light);
+    }
+    .quiz-options input { margin-right: 0.5rem; }
+    .quiz-feedback {
+      display: none;
+      margin-top: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .quiz-feedback.correct {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .quiz-feedback.wrong {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .quiz-btn {
+      margin-top: 0.75rem;
+      padding: 0.5rem 1.25rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .quiz-btn:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ==== 头部 ==== -->
+  <header class="lesson-header">
+    <div class="lesson-number">第 1 课</div>
+    <h1 class="lesson-title">Monorepo 概念入门 — 一个仓库统治它们全部</h1>
+  </header>
+
+  <div class="meta">
+    <div class="meta-item">📅 2026-07-28</div>
+    <div class="meta-item">⏱️ 约 15 分钟</div>
+    <div class="meta-item">🎯 入门 · 概念</div>
+  </div>
+
+  <!-- ==== 开篇 ==== -->
+  <div class="section">
+    <h2 class="section-title">1. 先看看你熟悉的场景</h2>
+    <p>
+      假设你要做一个全栈项目：一个 <strong>Vue 3 管理后台</strong> + 一个 <strong>Node.js API 服务</strong>，
+      还有一些共用代码（比如工具函数、类型定义、UI 组件）。
+    </p>
+    <p>
+      最常见的做法是 <strong>Polyrepo（多仓库）</strong>——每个项目各自一个 Git 仓库：
+    </p>
+
+    <div class="structure-viz">
+      <div class="structure-card">
+        <h4>🔴 Polyrepo（多仓库）</h4>
+        <div class="tree">
+          <span class="comment"># 仓库 1: admin-frontend</span><br>
+          <span class="dir">admin-frontend/</span><br>
+          &nbsp;&nbsp;<span class="file">src/</span><br>
+          &nbsp;&nbsp;<span class="file">package.json</span><br>
+          &nbsp;&nbsp;<span class="file">tsconfig.json</span><br>
+          <span class="comment"># 仓库 2: api-server</span><br>
+          <span class="dir">api-server/</span><br>
+          &nbsp;&nbsp;<span class="file">src/</span><br>
+          &nbsp;&nbsp;<span class="file">package.json</span><br>
+          <span class="comment"># 仓库 3: shared-utils</span><br>
+          <span class="dir">shared-utils/</span><br>
+          &nbsp;&nbsp;<span class="file">src/</span><br>
+          &nbsp;&nbsp;<span class="file">package.json</span><br>
+          &nbsp;&nbsp;<span class="comment">(要发布 npm 或 npm link)</span>
+        </div>
+      </div>
+      <div class="structure-card">
+        <h4>🟢 Monorepo（单仓库）</h4>
+        <div class="tree">
+          <span class="comment"># 一个仓库管理全部</span><br>
+          <span class="dir">my-project/</span><br>
+          &nbsp;&nbsp;<span class="file">pnpm-workspace.yaml</span><br>
+          &nbsp;&nbsp;<span class="file">package.json</span><br>
+          &nbsp;&nbsp;<span class="dir">apps/</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">admin/</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">server/</span><br>
+          &nbsp;&nbsp;<span class="dir">packages/</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">shared-utils/</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">ui-components/</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==== 比喻 ==== -->
+  <div class="metaphor">
+    <h4>💡 一句话理解 Monorepo</h4>
+    <p>
+      Polyrepo 就像 <strong>三个独立的小区</strong>，各有各的大门和物业，想串个门很麻烦。<br>
+      Monorepo 则是 <strong>一栋大楼里的三个楼层</strong>，共享水电、电梯和走廊，串门只需要走楼梯。
+    </p>
+  </div>
+
+  <!-- ==== 核心定义 ==== -->
+  <div class="section">
+    <h2 class="section-title">2. Monorepo 到底是什么？</h2>
+
+    <div class="card">
+      <div class="card-title">📖 官方定义</div>
+      <p>
+        <strong>Monorepo</strong>（Mono = 单一，Repo = 仓库）是一种代码管理策略，将
+        <strong>多个相关但独立的项目</strong>存放在 <strong>同一个 Git 仓库</strong>中统一管理。
+      </p>
+    </div>
+
+    <p>它与"把代码放一起"有本质区别——Monorepo 的核心是：</p>
+    <ul>
+      <li><strong>每个项目仍是独立的包</strong>（有自己的 <code>package.json</code>）</li>
+      <li><strong>通过 Workspace（工作区）机制</strong>让它们能互相引用</li>
+      <li><strong>统一工具链</strong>（一份 ESLint/TypeScript 配置管全部）</li>
+      <li><strong>原子提交</strong>（一次 commit 可以同时改前端和后端）</li>
+    </ul>
+
+    <div class="callout">
+      <div class="callout-title">⚠️ 常见误解</div>
+      <p>
+        Monorepo ≠ 把所有代码扔进一个巨型项目。每个子项目有独立构建、独立版本、独立职责。
+        它更像是<strong>住在同一个小区里的独立住户</strong>，而不是住在同一个房间里。
+      </p>
+    </div>
+  </div>
+
+  <!-- ==== 对比 ==== -->
+  <div class="section">
+    <h2 class="section-title">3. Monorepo vs Polyrepo — 一张表看懂</h2>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th style="width:22%">维度</th>
+          <th style="width:39%">Polyrepo（多仓库）</th>
+          <th style="width:39%">Monorepo（单仓库）</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>代码共享</strong></td>
+          <td>需要发布 npm 包或用 <code>npm link</code>，流程繁琐</td>
+          <td>直接用 <code>workspace:*</code> 引用，和引用本地文件一样简单</td>
+        </tr>
+        <tr>
+          <td><strong>跨项目改动</strong></td>
+          <td>需要分别提 MR/PR，容易遗漏、版本错乱</td>
+          <td>一次 commit 覆盖所有相关改动，原子操作</td>
+        </tr>
+        <tr>
+          <td><strong>依赖管理</strong></td>
+          <td>每个仓库各自 <code>npm install</code>，版本可能不一致</td>
+          <td>根目录统一安装，pnpm 用硬链接去重，省磁盘</td>
+        </tr>
+        <tr>
+          <td><strong>CI/CD</strong></td>
+          <td>各自独立流水线，配置分散</td>
+          <td>统一流水线 + 按变更范围智能构建（需要工具支持）</td>
+        </tr>
+        <tr>
+          <td><strong>权限控制</strong></td>
+          <td>天然隔离，不同团队只能看自己的仓库</td>
+          <td>需要在仓库内部做目录级权限（或使用 CODEOWNERS）</td>
+        </tr>
+        <tr>
+          <td><strong>上手难度</strong></td>
+          <td>简单直观，一个项目一个仓库</td>
+          <td>需要学习 Workspace 配置和 Monorepo 工具链</td>
+        </tr>
+        <tr>
+          <td><strong>适合场景</strong></td>
+          <td>项目完全独立、无共享代码、不同团队</td>
+          <td>有共享包的关联项目、微前端、组件库 + 应用</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ==== 核心术语 ==== -->
+  <div class="section">
+    <h2 class="section-title">4. 核心术语速览</h2>
+
+    <div class="card">
+      <div class="card-title"><code>Workspace</code>（工作区）</div>
+      <p>
+        告诉包管理器"哪些目录是子项目"的配置。pnpm 通过 <code>pnpm-workspace.yaml</code> 定义。
+        Workspace 内的包可以互相引用，就像在一个小型的本地 npm registry 里。
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><code>Package</code>（包）</div>
+      <p>
+        Workspace 下的每个子项目都是一个包。每个包有自己的 <code>package.json</code>，
+        独立构建、独立版本。包名通常用作用域前缀，如 <code>@my-project/shared-utils</code>。
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><code>Root package</code>（根包）</div>
+      <p>
+        仓库根目录的 <code>package.json</code>，通常设置 <code>"private": true</code>（防止误发布）。
+        在这里管理全局工具（TypeScript、ESLint）和统一脚本。
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><code>workspace:*</code> 协议</div>
+      <p>
+        pnpm 特有的依赖协议。当包 A 依赖包 B 时，用 <code>"@my-project/b": "workspace:*"</code>
+        告诉 pnpm："从本地工作区解析，不要去 npm registry 下载"。
+      </p>
+    </div>
+  </div>
+
+  <!-- ==== 典型结构 ==== -->
+  <div class="section">
+    <h2 class="section-title">5. 一个典型的 Monorepo 长什么样</h2>
+
+    <pre><code>my-monorepo/
+├── pnpm-workspace.yaml      ← 定义哪些目录是子项目
+├── package.json              ← 根配置（private: true）
+├── tsconfig.base.json        ← 共享 TypeScript 配置
+├── .eslintrc.js              ← 共享 ESLint 配置
+├── pnpm-lock.yaml            ← 全局锁文件
+│
+├── apps/                     ← 应用（可独立部署）
+│   ├── admin/                ← Vue 3 管理后台
+│   │   ├── package.json
+│   │   ├── vite.config.ts
+│   │   └── src/
+│   └── server/               ← Node.js API 服务
+│       ├── package.json
+│       └── src/
+│
+└── packages/                 ← 共享库（被 apps 引用）
+    ├── shared-utils/         ← 工具函数
+    │   ├── package.json      ← name: "@my-project/shared-utils"
+    │   └── src/
+    └── ui-components/        ← 共享 UI 组件
+        ├── package.json      ← name: "@my-project/ui-components"
+        └── src/</code></pre>
+
+    <div class="callout">
+      <div class="callout-title">📐 目录命名约定</div>
+      <p>
+        <code>apps/</code>：可独立运行、部署的应用（前端页面、后端服务、小程序等）<br>
+        <code>packages/</code>：被引用的共享库（工具、组件、类型、配置等）<br>
+        这是社区广泛采用的约定，不是强制规则。
+      </p>
+    </div>
+  </div>
+
+  <!-- ==== 工具生态 ==== -->
+  <div class="section">
+    <h2 class="section-title">6. 工具生态一览</h2>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>工具</th>
+          <th>职责</th>
+          <th>一句话</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>pnpm Workspace</strong></td>
+          <td>包管理 + 依赖管理</td>
+          <td>Monorepo 的<strong>地基</strong>，管依赖和链接</td>
+        </tr>
+        <tr>
+          <td><strong>Turborepo</strong></td>
+          <td>任务编排 + 缓存</td>
+          <td>让构建和测试<strong>只跑改了的部分</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Nx</strong></td>
+          <td>全功能构建系统</td>
+          <td>比 Turborepo 更重，带依赖图可视化和代码生成</td>
+        </tr>
+        <tr>
+          <td><strong>Lerna</strong></td>
+          <td>版本管理 + 发布</td>
+          <td>老牌工具，现在常和 Nx/Turborepo 配合使用</td>
+        </tr>
+        <tr>
+          <td><strong>Changesets</strong></td>
+          <td>版本管理 + Changelog</td>
+          <td>管理多包的版本发布和变更日志</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      对于入门来说，<strong>pnpm Workspace 就够用了</strong>。涡轮增压（Turborepo）是加分项，后面再学。
+    </p>
+  </div>
+
+  <!-- ==== 测验 ==== -->
+  <div class="section">
+    <h2 class="section-title">7. 小测验 — 检验一下</h2>
+
+    <div class="quiz" id="quiz1">
+      <div class="quiz-title">❓ 第 1 题</div>
+      <q>Monorepo 的核心价值是什么？</q>
+      <div class="quiz-options">
+        <label><input type="radio" name="q1" value="a">A. 把所有代码压缩成一个文件，提高性能</label>
+        <label><input type="radio" name="q1" value="b">B. 将多个相关项目放在一个仓库中，通过 Workspace 机制统一管理依赖和代码共享</label>
+        <label><input type="radio" name="q1" value="c">C. 用一个大项目代替所有小项目</label>
+        <label><input type="radio" name="q1" value="d">D. 强制所有团队成员使用同一个编辑器</label>
+      </div>
+      <button class="quiz-btn" onclick="checkQ1()">提交答案</button>
+      <div class="quiz-feedback" id="q1-feedback"></div>
+    </div>
+
+    <div class="quiz" id="quiz2">
+      <div class="quiz-title">❓ 第 2 题</div>
+      <q>以下哪个不是 Monorepo 的优势？</q>
+      <div class="quiz-options">
+        <label><input type="radio" name="q2" value="a">A. 跨项目原子提交</label>
+        <label><input type="radio" name="q2" value="b">B. 统一依赖版本管理</label>
+        <label><input type="radio" name="q2" value="c">C. 天然隔离不同团队的代码访问权限</label>
+        <label><input type="radio" name="q2" value="d">D. 共享代码无需发布 npm</label>
+      </div>
+      <button class="quiz-btn" onclick="checkQ2()">提交答案</button>
+      <div class="quiz-feedback" id="q2-feedback"></div>
+    </div>
+
+    <div class="quiz" id="quiz3">
+      <div class="quiz-title">❓ 第 3 题</div>
+      <q>在 pnpm Monorepo 中，<code>pnpm-workspace.yaml</code> 的作用是什么？</q>
+      <div class="quiz-options">
+        <label><input type="radio" name="q3" value="a">A. 定义项目的 ESLint 规则</label>
+        <label><input type="radio" name="q3" value="b">B. 声明哪些目录包含子项目（包）</label>
+        <label><input type="radio" name="q3" value="c">C. 配置 TypeScript 编译选项</label>
+        <label><input type="radio" name="q3" value="d">D. 定义项目的 Git 工作流</label>
+      </div>
+      <button class="quiz-btn" onclick="checkQ3()">提交答案</button>
+      <div class="quiz-feedback" id="q3-feedback"></div>
+    </div>
+  </div>
+
+  <script>
+    function checkQ1() {
+      const selected = document.querySelector('input[name="q1"]:checked');
+      const fb = document.getElementById('q1-feedback');
+      if (!selected) { fb.style.display = 'block'; fb.className = 'quiz-feedback wrong'; fb.textContent = '请先选择一个答案！'; return; }
+      fb.style.display = 'block';
+      if (selected.value === 'b') {
+        fb.className = 'quiz-feedback correct';
+        fb.textContent = '✅ 正确！Monorepo 的核心就是通过 Workspace 统一管理多个相关项目，利用本地链接实现代码共享。';
+      } else {
+        fb.className = 'quiz-feedback wrong';
+        fb.textContent = '❌ 不对哦。回顾一下：Monorepo 不是合并代码，而是统一管理多个独立项目。正确答案是 B。';
+      }
+    }
+    function checkQ2() {
+      const selected = document.querySelector('input[name="q2"]:checked');
+      const fb = document.getElementById('q2-feedback');
+      if (!selected) { fb.style.display = 'block'; fb.className = 'quiz-feedback wrong'; fb.textContent = '请先选择一个答案！'; return; }
+      fb.style.display = 'block';
+      if (selected.value === 'c') {
+        fb.className = 'quiz-feedback correct';
+        fb.textContent = '✅ 正确！权限隔离恰恰是 Polyrepo 的优势。Monorepo 需要在仓库内部做目录级权限控制，这是它的一个短板。';
+      } else {
+        fb.className = 'quiz-feedback wrong';
+        fb.textContent = '❌ 再想想：Monorepo 中所有代码都在一个仓库里，权限隔离比 Polyrepo 更困难。正确答案是 C。';
+      }
+    }
+    function checkQ3() {
+      const selected = document.querySelector('input[name="q3"]:checked');
+      const fb = document.getElementById('q3-feedback');
+      if (!selected) { fb.style.display = 'block'; fb.className = 'quiz-feedback wrong'; fb.textContent = '请先选择一个答案！'; return; }
+      fb.style.display = 'block';
+      if (selected.value === 'b') {
+        fb.className = 'quiz-feedback correct';
+        fb.textContent = '✅ 正确！pnpm-workspace.yaml 通过 packages 字段声明工作区包含哪些目录，pnpm 才知道哪些是子项目。';
+      } else {
+        fb.className = 'quiz-feedback wrong';
+        fb.textContent = '❌ 不对。pnpm-workspace.yaml 是 pnpm 特有的配置文件，用来声明工作区的子项目目录。正确答案是 B。';
+      }
+    }
+  </script>
+
+  <!-- ==== 导航 ==== -->
+  <div class="nav-links">
+    <span></span>
+    <a href="./0002-pnpm-workspace-setup.html">下一课：pnpm Workspace 从零配置 →</a>
+  </div>
+
+  <!-- ==== 页脚 ==== -->
+  <div class="callout" style="margin-top: 2rem;">
+    <div class="callout-title">📚 推荐阅读</div>
+    <p>
+      官方文档：<a href="https://pnpm.io/zh/workspaces" target="_blank">pnpm Workspace 文档</a> — 理解 Workspace 配置的最佳来源。<br>
+      文章：<a href="https://jishuzhan.net/article/2000750992925720578" target="_blank">使用 pnpm + Workspaces 构建 Monorepo 的完整指南</a><br>
+      如有任何疑问，随时问我——你的专属助教上线中 😊
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

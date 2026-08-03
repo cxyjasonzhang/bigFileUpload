@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第3课：共享包深入 & TypeScript 集成</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    @media (max-width: 600px) { .compare-grid { grid-template-columns: 1fr; } }
+    .do-card {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+    }
+    .dont-card {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+    }
+    .do-card h4 { color: #166534; font-size: 0.95rem; margin-bottom: 0.4rem; }
+    .dont-card h4 { color: #991b1b; font-size: 0.95rem; margin-bottom: 0.4rem; }
+    .do-card p, .dont-card p { font-size: 0.88rem; margin-bottom: 0.3rem; }
+
+    .flow-arrow {
+      text-align: center;
+      font-size: 1.5rem;
+      color: var(--accent);
+      margin: 0.75rem 0;
+    }
+
+    .dep-graph {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin: 1.5rem 0;
+      padding: 1.5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .dep-node {
+      padding: 0.6rem 1.2rem;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+    .dep-node.app { background: #dbeafe; color: #1e40af; }
+    .dep-node.pkg { background: #fef3c7; color: #92400e; }
+    .dep-arrow {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      font-weight: 700;
+    }
+
+    /* 练习 - 拖拽式匹配 */
+    .match-exercise {
+      display: flex;
+      gap: 2rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+    }
+    .match-col {
+      flex: 1;
+      min-width: 220px;
+    }
+    .match-col h5 {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+    .match-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.4rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .match-item.selected {
+      border-color: var(--accent);
+      background: var(--accent-light);
+    }
+    .match-item.matched {
+      border-color: var(--success);
+      background: #d1fae5;
+      cursor: default;
+    }
+    .match-item.wrong-flash {
+      border-color: var(--error);
+      background: #fee2e2;
+      animation: shake 0.4s;
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header class="lesson-header">
+    <div class="lesson-number">第 3 课</div>
+    <h1 class="lesson-title">共享包深入 & TypeScript 集成 — 让 Monorepo 真正好用</h1>
+  </header>
+
+  <div class="meta">
+    <div class="meta-item">📅 2026-07-29</div>
+    <div class="meta-item">⏱️ 约 25 分钟</div>
+    <div class="meta-item">🏗️ 架构设计</div>
+  </div>
+
+  <!-- ==================== 回顾 ==================== -->
+  <div class="section">
+    <h2 class="section-title">0. 快速回顾</h2>
+    <p>
+      前两课我们搞清楚了 Monorepo 是什么（第1课），并动手用 pnpm Workspace 搭好了架子（第2课）。
+      现在项目能跑了，但还不够"好用"——这节课解决两个关键问题：
+    </p>
+    <ul>
+      <li><strong>共享包该怎么设计？</strong>什么代码值得抽、什么不该抽？</li>
+      <li><strong>TypeScript 怎么在 Monorepo 中统一配置？</strong>跨包引用时 IDE 能正确提示吗？</li>
+    </ul>
+  </div>
+
+  <!-- ==================== 第1部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">1. 共享包设计 — 什么该抽，什么不该抽</h2>
+
+    <p>Monorepo 最大的诱惑是"把所有共享代码都抽成包"，但这正是走向地狱的路。</p>
+
+    <div class="compare-grid">
+      <div class="do-card">
+        <h4>✅ 应该抽成共享包的</h4>
+        <p>• 多个应用<strong>真正共用</strong>的工具函数</p>
+        <p>• 类型定义（DTO、API 响应类型）</p>
+        <p>• UI 组件库（Button、Modal、Table）</p>
+        <p>• 业务常量（枚举、配置）</p>
+        <p>• ESLint / TSConfig / Prettier 配置</p>
+      </div>
+      <div class="dont-card">
+        <h4>❌ 不应该抽成共享包的</h4>
+        <p>• 只有一个应用用到的代码</p>
+        <p>• 带业务上下文的状态管理逻辑</p>
+        <p>• 还没想清楚的"将来可能共用"</p>
+        <p>• 过度抽象的"万能工具"</p>
+        <p>• 各自差异很大的"公共"组件</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💡 一个判断原则</div>
+      <p>
+        <strong>"两个应用用，就抽。只有一个用，留着。"</strong><br>
+        提前抽象是万恶之源。宁可先复制，等第三个地方用到时再抽——那时候你才真正知道
+        "共享接口"应该长什么样。
+      </p>
+    </div>
+  </div>
+
+  <!-- ==================== 第2部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">2. 共享包的标准目录结构</h2>
+
+    <p>一个好的共享包应该有清晰的入口和职责。以下是推荐结构：</p>
+
+    <pre><code>packages/shared-utils/
+├── package.json              ← name + main + types + exports
+├── tsconfig.json             ← 继承根配置
+├── src/
+│   ├── index.ts              ← 统一导出（桶文件）
+│   ├── format.ts             ← 格式化相关
+│   ├── validate.ts           ← 校验相关
+│   └── __tests__/            ← 单元测试
+│       ├── format.test.ts
+│       └── validate.test.ts
+└── README.md                 ← 这个包是干什么的</code></pre>
+
+    <div class="card">
+      <div class="card-title">🔑 关键：统一导出（Barrel Export）</div>
+      <p>
+        <code>src/index.ts</code> 是包的"门面"，把所有要暴露的内容从这里统一导出：<br>
+        使用者只需要 <code>import { formatDate, validateEmail } from '@my-monorepo/shared-utils'</code>
+        一行，不用关心内部文件结构。
+      </p>
+    </div>
+
+    <div class="file-label">packages/shared-utils/src/index.ts（完整示例）</div>
+    <pre><code>// ── 统一导出文件（桶文件 / Barrel File）──
+
+// 格式化工具
+export { formatDate, formatCurrency, formatFileSize } from './format';
+
+// 校验工具
+export { validateEmail, validatePhone, validateIdCard } from './validate';
+
+// 类型定义
+export type { UserInfo, ApiResponse, PaginationParams } from './types';
+
+// 常量
+export { API_BASE_URL, PAGE_SIZE, DATE_FORMAT } from './constants';</code></pre>
+  </div>
+
+  <!-- ==================== 第3部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">3. TypeScript 在 Monorepo 中的配置策略</h2>
+
+    <p>
+      这是 Monorepo 中最容易翻车的地方。思路是：<strong>一个 base 配置管全局，每个包只写自己
+      特殊的东西</strong>。
+    </p>
+
+    <div class="flow-arrow">📐 三层 TSConfig 架构</div>
+
+    <div class="dep-graph" style="flex-direction: column; gap: 0.5rem;">
+      <div class="dep-node" style="background:#1e1e2e;color:#cba6f7;padding:0.5rem 1.5rem;font-size:0.9rem;">
+        tsconfig.base.json（基础配置 · 所有包共用）
+      </div>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center;">
+        <div class="dep-node pkg">tsconfig.json<br><small>packages/shared-utils</small></div>
+        <div class="dep-node app">tsconfig.json<br><small>apps/admin</small></div>
+        <div class="dep-node app">tsconfig.json<br><small>apps/server</small></div>
+      </div>
+    </div>
+
+    <p><strong>第①步：根目录创建 tsconfig.base.json</strong></p>
+    <div class="file-label">my-monorepo/tsconfig.base.json</div>
+    <pre><code>{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  }
+}</code></pre>
+
+    <p><strong>第②步：每个子包继承 base</strong></p>
+    <div class="file-label">packages/shared-utils/tsconfig.json</div>
+    <pre><code>{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src"]
+}</code></pre>
+
+    <div class="file-label">apps/admin/tsconfig.json（Vue 3 前端，Vite 创建时就有，只需确认 extends）</div>
+    <pre><code>{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.vue"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}</code></pre>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠️ 关键坑：跨包引用时 import 路径怎么写？</div>
+      <p>
+        在 admin 里引用 shared-utils，不要写 <code>'../../packages/shared-utils/src'</code> 这样的相对路径！<br>
+        正确做法：<code>import { formatDate } from '@my-monorepo/shared-utils'</code>。<br>
+        pnpm 的 workspace 链接会自动把包名映射到实际目录，TypeScript 也能正确解析 <code>package.json</code> 中的
+        <code>"types"</code> 或 <code>"main"</code> 字段。
+      </p>
+    </div>
+  </div>
+
+  <!-- ==================== 第4部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">4. 实战：给 shared-utils 加上 TypeScript</h2>
+
+    <p>接第 2 课的项目，我们给 shared-utils 升级为 TypeScript 版本。</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>在 shared-utils 中安装 TypeScript（开发依赖）</h4>
+        <pre><code>pnpm add -D typescript --filter @my-monorepo/shared-utils</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>补充 package.json 中的类型入口</h4>
+        <div class="file-label">packages/shared-utils/package.json</div>
+        <pre><code>{
+  "name": "@my-monorepo/shared-utils",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",        ← Node.js 解析入口
+  "types": "./src/index.ts",       ← TypeScript 类型入口
+  "exports": {
+    ".": "./src/index.ts"          ← 现代 ESM 导出
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>把 index.ts 升级为真正的 TypeScript</h4>
+        <div class="file-label">packages/shared-utils/src/format.ts（新增）</div>
+        <pre><code>/** 格式化日期为 YYYY-MM-DD */
+export function formatDate(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/** 格式化文件大小为人类可读格式 */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
+}</code></pre>
+
+        <div class="file-label">packages/shared-utils/src/types.ts（新增）</div>
+        <pre><code>/** 通用 API 响应结构 */
+export interface ApiResponse&lt;T = unknown&gt; {
+  code: number;
+  message: string;
+  data: T;
+}
+
+/** 分页参数 */
+export interface PaginationParams {
+  page: number;
+  pageSize: number;
+}
+
+/** 用户基础信息 */
+export interface UserInfo {
+  id: number;
+  name: string;
+  email: string;
+  avatar?: string;
+}</code></pre>
+
+        <div class="file-label">packages/shared-utils/src/index.ts（更新后）</div>
+        <pre><code>// 工具函数
+export { formatDate, formatFileSize } from './format';
+export { greet, add } from './utils';
+
+// 类型定义
+export type { ApiResponse, PaginationParams, UserInfo } from './types';</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>在 admin 中引用 — 享受完整的类型提示</h4>
+        <div class="file-label">apps/admin/src/App.vue（片段）</div>
+        <pre><code>&lt;script setup lang="ts"&gt;
+import { formatDate, formatFileSize } from '@my-monorepo/shared-utils';
+import type { UserInfo } from '@my-monorepo/shared-utils';
+
+// IDE 会给出完整的智能提示！⌨️
+const user: UserInfo = {
+  id: 1,
+  name: '张三',
+  email: 'zhangsan@example.com',
+};
+
+const today = formatDate(new Date());
+console.log(today);        // → "2026-07-29"
+console.log(formatFileSize(1536000));  // → "1.5 MB"
+&lt;/script&gt;</code></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🎯 效果验证</div>
+      <p>
+        在 admin 项目中 <code>Ctrl+Click</code> 点击 <code>formatDate</code>，IDE 应该直接跳转到
+        <code>packages/shared-utils/src/format.ts</code>。<br>
+        这就是 Monorepo + workspace 链接 + TypeScript 的"丝滑体验"。
+      </p>
+    </div>
+  </div>
+
+  <!-- ==================== 第5部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">5. 依赖管理进阶 — 什么依赖放哪里</h2>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>依赖类型</th>
+          <th>放在哪里</th>
+          <th>示例</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>全局开发工具</strong></td>
+          <td>根目录 <code>devDependencies</code></td>
+          <td>typescript, eslint, prettier, husky</td>
+        </tr>
+        <tr>
+          <td><strong>某个包的运行时依赖</strong></td>
+          <td>该包的 <code>dependencies</code></td>
+          <td>vue（在 admin 中）, express（在 server 中）</td>
+        </tr>
+        <tr>
+          <td><strong>某个包的开发依赖</strong></td>
+          <td>该包的 <code>devDependencies</code></td>
+          <td>vite（在 admin 中）, vitest（在 shared-utils 中）</td>
+        </tr>
+        <tr>
+          <td><strong>共享包引用</strong></td>
+          <td>使用方的 <code>dependencies</code></td>
+          <td><code>"@my-monorepo/shared-utils": "workspace:*"</code></td>
+        </tr>
+        <tr>
+          <td><strong>多个包都需要的同一依赖</strong></td>
+          <td>各自声明 + pnpm 去重</td>
+          <td>lodash 被 admin 和 server 都需要</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <div class="callout-title">💡 pnpm 的依赖提升策略</div>
+      <p>
+        pnpm 默认<strong>不提升</strong>依赖（与 npm/yarn 不同），每个包的依赖严格隔离。
+        这意味着你不用担心"幽灵依赖"——在 admin 里能 <code>import</code> 的东西，一定在
+        admin 的 <code>package.json</code> 里写了。<br><br>
+        如果确实需要某个依赖在所有包中都可用（罕见情况），可以在 <code>.npmrc</code> 中配置
+        <code>public-hoist-pattern[]=*</code>，但<strong>不推荐</strong>。
+      </p>
+    </div>
+  </div>
+
+  <!-- ==================== 第6部分 ==================== -->
+  <div class="section">
+    <h2 class="section-title">6. 共享配置包 — ESLint & Prettier 统一</h2>
+
+    <p>
+      除了共享业务代码，Monorepo 更大的价值在于<strong>共享配置</strong>。这是进阶用法，
+      先理解思路即可：
+    </p>
+
+    <div class="card">
+      <div class="card-title">📦 概念：把配置也打包</div>
+      <p>
+        创建一个 <code>packages/eslint-config</code> 包，导出统一的 ESLint 规则。<br>
+        各子项目只需 <code>extends: ['@my-monorepo/eslint-config']</code>。<br>
+        改一处，全项目生效。这就是 Monorepo 的<strong>治理能力</strong>。
+      </p>
+    </div>
+
+    <pre><code>// packages/eslint-config/index.js（示意）
+module.exports = {
+  root: true,
+  env: { browser: true, node: true, es2022: true },
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'prettier',
+  ],
+  parser: '@typescript-eslint/parser',
+  rules: {
+    'no-console': 'warn',
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+  },
+};</code></pre>
+
+    <div class="callout callout-warning">
+      <div class="callout-title">⚠️ 注意</div>
+      <p>
+        共享 ESLint 配置包通常需要发布到 npm 或使用 <code>workspace:*</code> 协议。
+        但 ESLint 的 <code>extends</code> 解析机制比较特殊，直接用 <code>workspace:*</code>
+        可能不工作，需要配合 <code>require.resolve</code> 或使用扁平配置（flat config）。这个坑在进阶阶段再展开。
+      </p>
+    </div>
+  </div>
+
+  <!-- ==================== 练习 ==================== -->
+  <div class="section">
+    <h2 class="section-title">7. 练习 ✍️</h2>
+
+    <div class="exercise" id="ex1">
+      <h4>📝 练习 1：判断是否该抽共享包</h4>
+      <p>
+        以下场景中，哪些<strong>适合</strong>抽成共享包？（多选，在合适的选项上点击选中）
+      </p>
+      <div id="ex1-options" style="margin: 0.75rem 0;">
+        <div class="match-item" data-value="a" onclick="toggleSelect(this)">A. admin 和 server 都要用的日期格式化函数</div>
+        <div class="match-item" data-value="b" onclick="toggleSelect(this)">B. 只有 admin 用到的图表配置常量</div>
+        <div class="match-item" data-value="c" onclick="toggleSelect(this)">C. admin 和 server 的 API 响应类型定义 (ApiResponse)</div>
+        <div class="match-item" data-value="d" onclick="toggleSelect(this)">D. admin 内部的 Pinia store 状态管理逻辑</div>
+        <div class="match-item" data-value="e" onclick="toggleSelect(this)">E. 还没想好将来谁会用的"通用加密工具"</div>
+      </div>
+      <button class="quiz-btn" onclick="checkEx1()">检查答案</button>
+      <div class="quiz-feedback" id="ex1-feedback"></div>
+    </div>
+
+    <div class="exercise" id="ex2">
+      <h4>📝 练习 2：TSConfig 继承 — 补全缺失项</h4>
+      <p>
+        <code>packages/shared-utils/tsconfig.json</code>
+        要继承根目录的 <code>tsconfig.base.json</code>，应该怎么写？
+      </p>
+      <textarea id="ex2-answer" placeholder='{ "extends": "..." }'></textarea>
+      <button class="quiz-btn" onclick="checkEx2()">检查答案</button>
+      <div class="quiz-feedback" id="ex2-feedback"></div>
+    </div>
+
+    <div class="exercise" id="ex3">
+      <h4>📝 练习 3：package.json 入口配置</h4>
+      <p>
+        共享包 package.json 中，为了让使用者能正确 import 到类型定义，
+        <code>"types"</code> 字段的值应该是什么？
+      </p>
+      <textarea id="ex3-answer" placeholder='"types": "..."'></textarea>
+      <button class="quiz-btn" onclick="checkEx3()">检查答案</button>
+      <div class="quiz-feedback" id="ex3-feedback"></div>
+    </div>
+  </div>
+
+  <script>
+    // 练习1 — 多选
+    let ex1Selected = new Set();
+    function toggleSelect(el) {
+      if (el.classList.contains('matched') || el.classList.contains('wrong-flash')) return;
+      el.classList.toggle('selected');
+      if (ex1Selected.has(el.dataset.value)) {
+        ex1Selected.delete(el.dataset.value);
+      } else {
+        ex1Selected.add(el.dataset.value);
+      }
+    }
+    function checkEx1() {
+      const fb = document.getElementById('ex1-feedback');
+      if (ex1Selected.size === 0) { fb.style.display='block'; fb.className='quiz-feedback wrong'; fb.textContent='请先点击选择你认为合适的选项！'; return; }
+      fb.style.display='block';
+      const correct = new Set(['a','c']);
+      const selected = new Set(ex1Selected);
+      const isEqual = correct.size === selected.size && [...correct].every(v => selected.has(v));
+      if (isEqual) {
+        fb.className='quiz-feedback correct';
+        fb.textContent = '✅ 正确！A（两个应用都用的工具函数）和 C（共享类型定义）都适合抽成共享包。B、D 只有一个应用用，E 是过度抽象。';
+      } else {
+        fb.className='quiz-feedback wrong';
+        fb.textContent = '❌ 正确答案是 A 和 C。原则：两个以上应用真正共用的才抽。B/D 只有一个应用用，E 是"将来可能"的陷阱。';
+      }
+    }
+
+    function checkEx2() {
+      const ans = document.getElementById('ex2-answer').value.trim();
+      const fb = document.getElementById('ex2-feedback');
+      if (!ans) { fb.style.display='block'; fb.className='quiz-feedback wrong'; fb.textContent='请先输入答案！'; return; }
+      fb.style.display='block';
+      if (/"extends"\s*:\s*"\.\.\/\.\.\/tsconfig\.base\.json"/.test(ans) || /"extends"\s*:\s*"\.\.\/\.\.\/tsconfig\.base"/.test(ans)) {
+        fb.className='quiz-feedback correct';
+        fb.textContent = '✅ 正确！{ "extends": "../../tsconfig.base.json" } 从子包目录向上两级找到根目录的 base 配置。';
+      } else if (/extends/.test(ans) && /tsconfig/.test(ans)) {
+        fb.className='quiz-feedback wrong';
+        fb.textContent = '⚠️ 方向对了！但路径需要是 "../../tsconfig.base.json"（从 packages/shared-utils 向上两级）。';
+      } else {
+        fb.className='quiz-feedback wrong';
+        fb.textContent = '❌ 使用 "extends" 字段继承根配置：{ "extends": "../../tsconfig.base.json" }。';
+      }
+    }
+
+    function checkEx3() {
+      const ans = document.getElementById('ex3-answer').value.trim();
+      const fb = document.getElementById('ex3-feedback');
+      if (!ans) { fb.style.display='block'; fb.className='quiz-feedback wrong'; fb.textContent='请先输入答案！'; return; }
+      fb.style.display='block';
+      if (/".\/src\/index\.ts"/.test(ans) || /".\/src\/index"/.test(ans)) {
+        fb.className='quiz-feedback correct';
+        fb.textContent = '✅ 正确！"types": "./src/index.ts" 指向入口文件，TypeScript 就能从那里读取类型定义。';
+      } else if (/index\.ts/.test(ans)) {
+        fb.className='quiz-feedback wrong';
+        fb.textContent = '⚠️ 接近了！标准写法是 "types": "./src/index.ts"，指向包的 TS 入口文件。';
+      } else {
+        fb.className='quiz-feedback wrong';
+        fb.textContent = '❌ 提示：指向入口 TS 文件的路径，例如 "types": "./src/index.ts"。';
+      }
+    }
+  </script>
+
+  <!-- ==== 导航 ==== -->
+  <div class="nav-links">
+    <a href="./0002-pnpm-workspace-setup.html">← 上一课：pnpm Workspace 从零配置</a>
+    <a href="./0004-turborepo-intro.html">下一课：Turborepo 入门 — 构建加速 →</a>
+  </div>
+
+  <div class="callout" style="margin-top: 2rem;">
+    <div class="callout-title">📚 推荐阅读</div>
+    <p>
+      <a href="https://www.typescriptlang.org/tsconfig/" target="_blank">TypeScript TSConfig 参考</a> — 所有编译选项的官方说明。<br>
+      <a href="https://pnpm.io/zh/workspaces" target="_blank">pnpm Workspace 文档</a> — workspace 协议的完整用法。<br>
+      学完有疑问随时问，下一课我们给项目装上"涡轮增压"——Turborepo 🚀
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

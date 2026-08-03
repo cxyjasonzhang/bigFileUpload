@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monorepo 术语速查表</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .glossary dt {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text);
+      margin-top: 1.25rem;
+    }
+    .glossary dd {
+      margin-left: 0;
+      margin-top: 0.3rem;
+      color: var(--text-secondary);
+      font-size: 0.93rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .glossary dt:first-child { margin-top: 0; }
+    .print-only { display: none; }
+    @media print {
+      .no-print { display: none; }
+      .print-only { display: block; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header class="lesson-header">
+    <div class="lesson-number">参考文档</div>
+    <h1 class="lesson-title">Monorepo 术语速查表</h1>
+  </header>
+
+  <p>本文档是 Monorepo 领域的核心术语速查。学新概念时回来翻一翻，帮助巩固记忆。</p>
+
+  <dl class="glossary">
+    <dt>Monorepo</dt>
+    <dd>将多个相关但独立的项目存放在同一个 Git 仓库中的代码管理策略。Mono = 单一，Repo = 仓库。</dd>
+
+    <dt>Polyrepo</dt>
+    <dd>Monorepo 的反面——每个项目一个独立的 Git 仓库。也是传统的、最常见的做法。</dd>
+
+    <dt>Workspace（工作区）</dt>
+    <dd>包管理器提供的一种机制，允许在一个仓库中定义多个包，并使它们能够互相引用。pnpm 通过 <code>pnpm-workspace.yaml</code> 配置。</dd>
+
+    <dt>Package（包）</dt>
+    <dd>Workspace 下的每个独立项目。每个包有自己的 <code>package.json</code>、独立版本号、独立构建产物。</dd>
+
+    <dt>Root Package（根包）</dt>
+    <dd>仓库根目录的 <code>package.json</code>，通常设置 <code>"private": true</code> 防止误发布。在此管理全局脚本和共享 devDependencies。</dd>
+
+    <dt><code>workspace:*</code> 协议</dt>
+    <dd>pnpm 特有的依赖协议。声明依赖为 <code>"foo": "workspace:*"</code> 时，pnpm 会从本地工作区解析该包，而不是从 npm registry 下载。</dd>
+
+    <dt><code>pnpm-workspace.yaml</code></dt>
+    <dd>pnpm 的工作区配置文件，定义哪些目录包含子项目。优先级高于 <code>package.json</code> 中的 <code>workspaces</code> 字段。</dd>
+
+    <dt>pnpm</dt>
+    <dd>快速、节省磁盘的包管理器。使用硬链接和符号链接管理 node_modules，天然支持 Workspace。npm/yarn 的替代品。</dd>
+
+    <dt>Turborepo</dt>
+    <dd>Vercel 开发的 Monorepo 构建工具。通过任务图（Pipeline）和缓存机制，只构建发生变化的包及其依赖，大幅提速。</dd>
+
+    <dt>Nx</dt>
+    <dd>Nrwl 开发的全功能构建系统。功能比 Turborepo 更丰富，包括依赖图可视化、代码生成器、插件系统等。</dd>
+
+    <dt>Lerna</dt>
+    <dd>老牌 Monorepo 管理工具，擅长版本管理和发布。现状：常与 Nx 或 Turborepo 配合使用，Lerna 负责发布，另一个负责构建。</dd>
+
+    <dt>Changesets</dt>
+    <dd>专注于多包版本管理和 Changelog 生成的工具。比 Lerna 更轻量，是当前社区推荐方案。</dd>
+
+    <dt>Atomic Commit（原子提交）</dt>
+    <dd>Monorepo 的核心优势之一：可以一次 git commit 同时修改多个项目，保证改动的一致性，避免多仓库间版本错乱。</dd>
+
+    <dt>幽灵依赖 (Phantom Dependency)</dt>
+    <dd>代码中使用了某个包，但没有在 <code>package.json</code> 中显式声明。pnpm 的严格模式可杜绝此问题。</dd>
+
+    <dt>硬链接 (Hard Link)</dt>
+    <dd>pnpm 存储依赖的方式：多个项目共享同一份磁盘文件，而不是各自拷贝一份，极大节省磁盘空间。</dd>
+
+    <dt>Filter（过滤）</dt>
+    <dd>Monorepo 工具的命令过滤语法。如 <code>pnpm --filter admin run dev</code> 只对 admin 包执行 dev 脚本。</dd>
+
+    <dt>Pipeline（流水线）</dt>
+    <dd>Turborepo 中的核心概念。定义任务之间的依赖关系（如 build 之前必须先 build 它的依赖），实现正确且高效的并行执行。</dd>
+  </dl>
+
+  <div class="callout no-print" style="margin-top: 2rem;">
+    <div class="callout-title">📎 相关文档</div>
+    <p>
+      <a href="../lessons/0001-monorepo-concepts.html">第 1 课：Monorepo 概念入门</a> |
+      <a href="../MISSION.md">学习任务</a> |
+      <a href="../RESOURCES.md">学习资源</a>
+    </p>
+  </div>
+
+  <p class="print-only" style="margin-top: 2rem; font-size: 0.8rem; color: #999;">
+    打印时间：2026-07-28 | Monorepo 学习素材
+  </p>
+
+</div>
+</body>
+</html>
