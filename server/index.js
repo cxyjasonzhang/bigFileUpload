@@ -5,7 +5,7 @@ const cors = require("cors")
 const cookieParser = require("cookie-parser")
 
 const app = express()
-const PORT = 3000
+const PORT = 3001
 
 // ─── 全局中间件 ─────────────────────────────────────────
 app.use(cors({ origin: "http://localhost:5173", credentials: true }))

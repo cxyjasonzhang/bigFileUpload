@@ -5,14 +5,16 @@
 
     <!-- 右侧主区域：顶部栏 + 历史 Tab + 内容区 -->
     <div class="layout-main">
-      <AppHeader />
-      <AppTabs />
+      <div id="app-header">
+        <AppHeader />
+        <AppTabs />
+      </div>
 
       <div class="layout-content">
         <!-- 路由视图 + keep-alive：仅缓存「已访问列表」中的组件 -->
-        <router-view v-slot="{ Component, route }">
+        <router-view v-slot="{ Component, route }" :style="contentStyle">
           <keep-alive :include="visitedComponentNames">
-            <component :is="Component" :key="route.path" />
+            <component class="art-page-view" :is="Component" :key="route.path" />
           </keep-alive>
         </router-view>
       </div>
@@ -21,13 +23,23 @@
 </template>
 
 <script setup lang="ts">
+import type { CSSProperties } from 'vue'
 import { computed, onMounted } from "vue";
 import AppSidebar from "./AppSidebar.vue";
 import AppHeader from "./AppHeader.vue";
 import AppTabs from "./AppTabs.vue";
 import { useLayoutStore } from "@/stores/layout";
+import { useAutoLayoutHeight } from '@/hooks/core/useLayoutHeight'
 
 const layout = useLayoutStore();
+
+const { containerMinHeight } = useAutoLayoutHeight()
+
+const contentStyle = computed(
+    (): CSSProperties => ({
+      minHeight: containerMinHeight.value
+    })
+  )
 
 // keep-alive 的 :include 仅接收「已访问列表」内的组件名，
 // 关闭 Tab（从列表移除）后对应组件自动从缓存驱逐

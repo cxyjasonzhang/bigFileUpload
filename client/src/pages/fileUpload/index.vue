@@ -198,7 +198,7 @@ import { ref, computed, onMounted } from "vue";
 
 defineOptions({ name: "FileUpload" });
 import { UploadFilled } from "@element-plus/icons-vue";
-import { ElMessage } from "element-plus";
+// ElMessage 由 unplugin-auto-import 自动导入
 import { UploadQueue, TASK_STATUS } from "@/utils/uploadQueue";
 
 const queue = new UploadQueue();

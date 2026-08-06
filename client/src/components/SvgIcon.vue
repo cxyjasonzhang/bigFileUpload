@@ -10,6 +10,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { get as getCachedIcon } from '@/utils/iconCache'
+defineOptions({ name: 'SvgIcon' })
 
 /**
  * SvgIcon - SVG 图标渲染组件

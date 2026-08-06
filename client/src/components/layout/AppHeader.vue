@@ -54,7 +54,7 @@ import {
   ArrowDown,
   Setting,
 } from "@element-plus/icons-vue";
-import { ElMessage } from "element-plus";
+// ElMessage 由 unplugin-auto-import 自动导入
 import { authState, logout } from "@/utils/auth";
 import { useLayoutStore } from "@/stores/layout";
 import ConfigDrawer from "./ConfigDrawer.vue";

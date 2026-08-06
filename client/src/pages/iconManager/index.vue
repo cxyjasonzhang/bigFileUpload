@@ -53,7 +53,7 @@
 import { ref, onMounted } from 'vue'
 
 defineOptions({ name: 'IconManager' })
-import { ElMessage, ElMessageBox } from 'element-plus'
+// ElMessage、ElMessageBox 由 unplugin-auto-import 自动导入
 import {
   getIconGroups, createIconGroup, updateIconGroup, deleteIconGroup,
   getIcons, deleteIcon, batchDeleteIcons,

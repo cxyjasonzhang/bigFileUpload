@@ -59,7 +59,7 @@
 import { ref, reactive } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { User, Lock } from "@element-plus/icons-vue";
-import { ElMessage, type FormInstance } from "element-plus";
+import { type FormInstance } from "element-plus";
 import { login } from "@/utils/auth";
 
 const route = useRoute();

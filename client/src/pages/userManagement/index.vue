@@ -101,7 +101,7 @@
 import { ref, reactive, onMounted } from "vue";
 
 defineOptions({ name: "UserManagement" });
-import { ElMessage } from "element-plus";
+// ElMessage 由 unplugin-auto-import 自动导入
 import { fetchUsers, createUser, updateUser, deleteUser } from "@/utils/api";
 import UserFormDialog from "@/components/UserFormDialog.vue";
 import SvgIcon from "@/components/SvgIcon.vue";

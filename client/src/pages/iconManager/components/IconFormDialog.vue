@@ -131,7 +131,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
-import { ElMessage, type FormInstance } from 'element-plus'
+import { type FormInstance } from 'element-plus'
 import { UploadFilled, Document, WarningFilled, CircleCheckFilled, Close } from '@element-plus/icons-vue'
 import DraggableDialog from '@/components/DraggableDialog.vue'
 import { updateIcon, batchCreateIcons, getIconNames, type IconInput } from '@/utils/api'

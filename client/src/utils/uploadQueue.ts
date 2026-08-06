@@ -1,6 +1,6 @@
 // uploadQueue.ts - 大文件分片上传队列（排队、断点续传、并发限制、重试）
 import { reactive } from "vue";
-import { ElMessage } from "element-plus";
+// ElMessage 由 unplugin-auto-import 自动导入
 import {
   calculateFileHash,
   createFileChunks,

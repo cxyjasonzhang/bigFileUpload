@@ -23,9 +23,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, onUnmounted } from 'vue'
+// import { ref, watch, nextTick, onUnmounted } from 'vue'
 import { Close } from '@element-plus/icons-vue'
-import SvgIcon from '@/components/SvgIcon.vue'
 
 // ==================== Props ====================
 const props = withDefaults(
