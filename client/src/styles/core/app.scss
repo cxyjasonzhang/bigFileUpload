@@ -1,3 +1,5 @@
+
+
 @mixin jet-card-base($border-color, $shadow: none, $radius-diff: 4px) {
   background: var(--default-box-color);
   border: 1px solid #{$border-color} !important;
@@ -8,7 +10,7 @@
   --el-card-border-color: var(--default-border) !important;
 }
 
-.art-card-xs {
+.jet-card-xs {
   @include jet-card-base(var(--art-card-border), none, -4px);
 }
 
@@ -36,4 +38,21 @@
     height: 100%;
     overflow: hidden;
   }
+}
+
+// 元素全屏
+.el-full-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100vw !important;
+  height: 100% !important;
+  z-index: 300;
+  margin-top: 0;
+  padding: 15px;
+  box-sizing: border-box;
+  background-color: var(--default-box-color);
+  display: flex;
+  flex-direction: column;
 }

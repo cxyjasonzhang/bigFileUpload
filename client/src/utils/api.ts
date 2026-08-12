@@ -128,6 +128,56 @@ export function mergeChunks(fileHash: string, fileName: string, totalChunks: num
   );
 }
 
+// ─── 角色管理接口 ─────────────────────────────────────────
+
+/** 角色类型 */
+export interface RoleItem {
+  roleId: number;
+  roleName: string;
+  roleCode: string;
+  description?: string;
+  enabled: number;
+  createTime?: string;
+  [key: string]: unknown;
+}
+
+/** 角色列表查询参数 */
+export interface RoleQuery {
+  roleName?: string;
+  roleCode?: string;
+  /** 启用状态：0 禁用 / 1 启用 */
+  enabled?: number;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface RoleListResult {
+  list: RoleItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+/** 获取角色列表（分页 + 搜索） */
+export function fetchGetRoleList(params: RoleQuery = {}) {
+  return request.get<ApiResponse<RoleListResult>>("/roles", { params });
+}
+
+/** 新建角色 */
+export function fetchCreateRole(data: { roleName: string; roleCode: string; description?: string; enabled?: number }) {
+  return request.post<ApiResponse<unknown>>("/roles", data);
+}
+
+/** 编辑角色 */
+export function fetchUpdateRole(id: number, data: { roleName: string; roleCode: string; description?: string; enabled?: number }) {
+  return request.put<ApiResponse<unknown>>(`/roles/${id}`, data);
+}
+
+/** 删除角色 */
+export function fetchDeleteRole(id: number) {
+  return request.delete<ApiResponse<unknown>>(`/roles/${id}`);
+}
+
 // ─── 用户管理接口 ─────────────────────────────────────────
 
 /** 获取用户列表（分页 + 搜索） */

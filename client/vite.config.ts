@@ -1,5 +1,4 @@
 import { defineConfig } from "vite";
-import path from 'path'
 import vue from "@vitejs/plugin-vue";
 import { fileURLToPath } from "url";
 // Element Plus 按需导入（ADR-0001）
@@ -37,9 +36,16 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
-      '@stores': resolvePath('src/store'),
-      '@styles': resolvePath('src/assets/styles')
+      "@stores": fileURLToPath(new URL("./src/stores", import.meta.url)),
+      "@styles": fileURLToPath(new URL("./src/styles", import.meta.url)),
     },
+  },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        additionalData: `@use "@/styles/core/el-light.scss" as *;`
+      }
+    }
   },
   server: {
     port: 5173,
@@ -52,7 +58,3 @@ export default defineConfig({
     },
   },
 });
-
-function resolvePath(paths: string) {
-  return path.resolve(__dirname, paths)
-}

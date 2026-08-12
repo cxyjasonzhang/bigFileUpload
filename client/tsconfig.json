@@ -19,7 +19,7 @@
     "esModuleInterop": true,
     "allowJs": false,
     "noEmit": true,
-    "types": ["vite/client", "node"],
+    "types": ["vite/client", "node", "element-plus/global"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]

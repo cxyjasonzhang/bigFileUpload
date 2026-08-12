@@ -5,7 +5,7 @@
 :root {
   /* Base Colors */
   --art-color: #ffffff;
-  --theme-color: var(--main-color);
+  --theme-color: var(--el-color-primary);
 
   /* Theme Colors - OKLCH Format */
   --art-primary: oklch(0.7 0.23 260);
@@ -45,6 +45,9 @@
 
   /* Element Component Active Color */
   --art-el-active-color: #f2f4f5;
+
+  /* Custom Border Radius */
+  --custom-radius: 8px;
 }
 
 /* ==================== Dark Mode Variables ==================== */

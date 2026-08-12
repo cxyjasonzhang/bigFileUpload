@@ -2,7 +2,7 @@
 <!-- 支持常用表单组件、自定义组件、插槽、校验、隐藏表单项 -->
 <!-- 写法同 ElementPlus 官方文档组件，把属性写在 props 里面就可以了 -->
 <template>
-  <section class="art-search-bar art-card-xs" :class="{ 'is-expanded': isExpanded }">
+  <section class="jet-search-bar jet-card-xs" :class="{ 'is-expanded': isExpanded }">
     <ElForm
       ref="formRef"
       :model="modelValue"
@@ -504,7 +504,7 @@
 </script>
 
 <style lang="scss" scoped>
-  .art-search-bar {
+  .jet-search-bar {
     padding: 15px 20px 0;
 
     .action-column {
@@ -555,7 +555,7 @@
 
   // 响应式优化
   @media (width <= 768px) {
-    .art-search-bar {
+    .jet-search-bar {
       padding: 16px 16px 0;
 
       .action-column {

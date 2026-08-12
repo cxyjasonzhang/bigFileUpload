@@ -20,10 +20,6 @@
         @click="refresh"
         :class="{ loading: loading && isManualRefresh }"
       >
-        <!-- <ArtSvgIcon
-          icon="ri:refresh-line"
-          :class="loading && isManualRefresh ? 'animate-spin text-g-600' : ''"
-        /> -->
         <SvgIcon name="sys/refresh" :size="16" />
       </div>
 

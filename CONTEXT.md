@@ -32,7 +32,8 @@
 ├── server/                # 后端项目
 └── docs/
     ├── adr/               # 架构决策记录
-    └── agents/            # Agent skills 配置
+    ├── agents/            # Agent skills 配置
+    └── standards/         # 开发规范（弹窗开发规范等）
 ```
 
 ## 关键概念
@@ -44,6 +45,9 @@
 | **主题色** | 7 种可选色，运行时注入 `--el-color-primary-*` CSS 变量 |
 | **keep-alive 缓存** | 内容区以 `visitedRoutes` 为 `:include` 的组件名列表，关闭 Tab 即驱逐缓存 |
 | **鉴权守卫** | `router.beforeEach` 校验 `authState.isLoggedIn`，未登录重定向 `/login?redirect=...` |
+| **固定 Tab** | `VisitedRoute.pinned = true` 的 Tab 不可通过关闭按钮或批量关闭操作移除（工作台默认固定） |
+| **Tab 右键菜单** | 使用 `JetMenuRight` 组件，支持刷新/固定/关闭左侧/关闭右侧/关闭其他/关闭全部（见 ADR-0002） |
+| **Tab 刷新** | 通过 `v-if` 控制 `<router-view>` 的销毁与重建，触发组件重新挂载（store.refreshKey 驱动） |
 
 ## 主题系统
 

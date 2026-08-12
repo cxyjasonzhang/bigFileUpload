@@ -21,6 +21,7 @@ app.use("/auth",        require("./routes/auth"))
 app.use("/users",       require("./routes/users"))
 app.use("/icon-groups", require("./routes/iconGroups"))
 app.use("/icons",       require("./routes/icons"))
+app.use("/roles",       require("./routes/roles"))    // 角色管理 CRUD
 app.use("/",            require("./routes/upload"))   // /check-file, /upload-chunk, /merge-chunks
 
 // ─── 启动服务 ──────────────────────────────────────────

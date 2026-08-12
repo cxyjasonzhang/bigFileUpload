@@ -5,7 +5,7 @@
       <div
         v-show="visible"
         :style="menuStyle"
-        class="context-menu art-card-xs !shadow-xl min-w-[var(--menu-width)] w-[var(--menu-width)]"
+        class="context-menu jet-card-xs !shadow-xl min-w-[var(--menu-width)] w-[var(--menu-width)]"
       >
         <ul class="menu-list m-0 list-none" :style="menuListStyle">
           <template v-for="item in menuItems" :key="item.key">
@@ -19,6 +19,7 @@
             >
               <SvgIcon
                 v-if="item.icon"
+                :size="12"
                 class="mr-2 shrink-0 text-base text-g-800"
                 :name="item.icon"
               />
@@ -37,6 +38,7 @@
               <div class="submenu-title flex-c w-full">
                 <SvgIcon
                   v-if="item.icon"
+                  :size="12"
                   class="mr-2 shrink-0 text-base text-g-800"
                   :name="item.icon"
                 />
@@ -46,6 +48,7 @@
                 >
                 <SvgIcon
                   name="ri:arrow-right-s-line"
+                  :size="12"
                   class="ubmenu-arrow ml-auto mr-0 text-base text-g-500 transition-transform duration-150"
                 />
               </div>
@@ -63,6 +66,7 @@
                 >
                   <SvgIcon
                     v-if="child.icon"
+                    :size="12"
                     class="r-2 shrink-0 text-base text-g-800 mr-1"
                     :name="child.icon"
                   />

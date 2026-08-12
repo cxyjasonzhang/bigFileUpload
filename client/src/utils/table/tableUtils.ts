@@ -184,6 +184,7 @@ export const updatePaginationFromResponse = <T>(
   pagination: Api.Common.PaginationParams,
   response: ApiResponse<T>
 ): void => {
+  
   pagination.total = response.total ?? pagination.total ?? 0
 
   if (response.current !== undefined) {
@@ -194,6 +195,7 @@ export const updatePaginationFromResponse = <T>(
   if (pagination.current > maxPage) {
     pagination.current = maxPage
   }
+  console.log('更新分页信息', pagination, response);
 }
 
 /**

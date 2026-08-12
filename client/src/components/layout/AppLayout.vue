@@ -11,8 +11,9 @@
       </div>
 
       <div class="layout-content">
-        <!-- 路由视图 + keep-alive：仅缓存「已访问列表」中的组件 -->
-        <router-view v-slot="{ Component, route }" :style="contentStyle">
+        <!-- 路由视图 + keep-alive：仅缓存「已访问列表」中的组件
+             v-if="isRefresh" 配合 refreshKey 实现 Tab 右键刷新：短暂销毁再重建，组件重新挂载 -->
+        <router-view v-if="isRefresh" v-slot="{ Component, route }" :style="contentStyle">
           <keep-alive :include="visitedComponentNames">
             <component class="art-page-view" :is="Component" :key="route.path" />
           </keep-alive>
@@ -24,7 +25,7 @@
 
 <script setup lang="ts">
 import type { CSSProperties } from 'vue'
-import { computed, onMounted } from "vue";
+import { ref, computed, watch, nextTick, onMounted } from "vue";
 import AppSidebar from "./AppSidebar.vue";
 import AppHeader from "./AppHeader.vue";
 import AppTabs from "./AppTabs.vue";
@@ -45,6 +46,19 @@ const contentStyle = computed(
 // 关闭 Tab（从列表移除）后对应组件自动从缓存驱逐
 const visitedComponentNames = computed(() =>
   layout.visitedRoutes.map((v) => v.component),
+);
+
+// Tab 刷新机制：watch refreshKey，短暂 v-if=false 再恢复，销毁再重建 router-view
+const isRefresh = ref(true);
+
+watch(
+  () => layout.refreshKey,
+  () => {
+    isRefresh.value = false;
+    nextTick(() => {
+      isRefresh.value = true;
+    });
+  },
 );
 
 // 初始化布局：注册窄屏自动收起侧栏的监听（决策 10）

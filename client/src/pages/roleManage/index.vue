@@ -75,105 +75,94 @@
         <template #operation="{ row }">
           <div class="flex">
             <JetButtonTable type="view" :row="row" @click="handleView(row)" />
-            <JetButtonTable type="edit" :row="row" @click="handleView(row)" />
-            <JetButtonTable type="delete" :row="row" @click="handleView(row)" />
+            <JetButtonTable type="edit" :row="row" @click="handleEdit(row)" />
+            <JetButtonTable type="delete" :row="row" @click="handleDelete(row)" />
           </div>
         </template>
       </JetTable>
     </ElCard>
+
+    <!-- 角色新增/编辑弹窗 -->
+    <RoleEditDialog
+      v-model="dialogVisible"
+      :dialog-type="dialogType"
+      :role-data="currentRole"
+      @success="getData"
+    />
+
+    <!-- 角色查看弹窗 -->
+    <RoleViewDialog v-model="viewDialogVisible" :role-data="viewRole" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Plus, Delete } from '@element-plus/icons-vue'
-import { ElMessageBox } from 'element-plus'
+// ElMessageBox 由 unplugin-auto-import 自动导入并注入样式（勿手动 import，否则样式不注入）
 import { useTable } from '@/hooks/core/useTable'
-// import { fetchGetRoleList } from '@/api/system-manage'
-import { ROLE_LIST_DATA } from '@/mock/temp/formData'
+import { fetchGetRoleList, fetchDeleteRole } from '@/utils/api'
+import RoleEditDialog from './modules/role-edit-dialog.vue'
+import RoleViewDialog from './modules/role-view-dialog.vue'
 
   type RoleListItem = Api.SystemManage.RoleListItem
 
   // 选中的行
   const selectedRows = ref<any[]>([])
 
+  // 角色新增/编辑弹窗状态
+  const dialogVisible = ref(false)
+  const dialogType = ref<'add' | 'edit'>('add')
+  const currentRole = ref<RoleListItem>()
+
+  // 角色查看弹窗状态
+  const viewDialogVisible = ref(false)
+  const viewRole = ref<RoleListItem>()
+
   // 搜索表单 ref
   const searchBarRef = ref()
 
   // 表单搜索初始值
   const searchFormState = ref({
-    name: '',
-    phone: '',
-    status: '1',
-    department: '',
-    daterange: ['2025-01-01', '2025-02-10']
+    roleName: '',
+    roleCode: '',
+    enabled: ''
   })
 
   // 搜索表单配置
   // 日期选择器有多种类型，具体可以查看 src/components/core/forms/art-search-bar/widget/art-search-date/README.md 文档
   const searchItems = computed(() => [
     {
-      key: 'name',
-      label: '用户名',
+      key: 'roleName',
+      label: '角色名称',
       type: 'input',
       props: {
-        placeholder: '请输入用户名'
+        placeholder: '请输入角色名称'
       }
     },
     {
-      key: 'phone',
-      label: '手机号',
+      key: 'roleCode',
+      label: '角色编码',
       type: 'input',
       props: {
-        placeholder: '请输入手机号',
-        maxlength: '11'
+        placeholder: '请输入角色编码'
       }
     },
     {
-      key: 'status',
-      label: '状态',
+      key: 'enabled',
+      label: '启用状态',
       type: 'select',
       options: [
         { label: '全部', value: '' },
-        { label: '在线', value: '1' },
-        { label: '离线', value: '2' },
-        { label: '异常', value: '3' },
-        { label: '注销', value: '4' }
+        { label: '启用', value: '1' },
+        { label: '禁用', value: '0' }
       ]
-    },
-    {
-      key: 'department',
-      label: '部门',
-      type: 'select',
-      options: [
-        { label: '全部', value: '' },
-        { label: '技术部', value: '技术部' },
-        { label: '产品部', value: '产品部' },
-        { label: '运营部', value: '运营部' },
-        { label: '市场部', value: '市场部' },
-        { label: '设计部', value: '设计部' }
-      ]
-    },
-    {
-      key: 'daterange',
-      label: '日期范围',
-      type: 'daterange',
-      props: {
-        type: 'daterange',
-        startPlaceholder: '开始日期',
-        endPlaceholder: '结束日期',
-        valueFormat: 'YYYY-MM-DD'
-      }
     }
   ])
 
   // 校验规则
   const rules = {
-    name: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-    phone: [
-      { required: true, message: '请输入手机号', trigger: 'blur' },
-      { pattern: /^1[3456789]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
-    ]
+    roleName: [{ required: false, message: '请输入角色名称', trigger: 'blur' }],
+    roleCode: [{ required: false, message: '请输入角色编码', trigger: 'blur' }]
   }
 
   const handleSearch = async () => {
@@ -185,14 +174,7 @@ import { ROLE_LIST_DATA } from '@/mock/temp/formData'
   }
 
   const buildSearchParams = (params: typeof searchFormState.value) => {
-    const { daterange, ...filtersParams } = params
-    const [startTime, endTime] = Array.isArray(daterange) ? daterange : [null, null]
-
-    return {
-      ...filtersParams,
-      startTime,
-      endTime
-    }
+    return { ...params }
   }
 
   const handleReset = () => {
@@ -235,37 +217,25 @@ import { ROLE_LIST_DATA } from '@/mock/temp/formData'
     // 核心配置
     core: {
       apiFn: (params) => {
-        console.log('🚀 角色列表请求参数:', params)
-
-        // 模拟分页：从 ROLE_LIST_DATA 中切片返回
-        return new Promise<Api.Common.PaginatedResponse>((resolve) => {
-          setTimeout(() => {
-            const { current, size } = params
-            const start = ((current - 1) * size)
-            const records = ROLE_LIST_DATA.slice(start, start + size)
-            resolve({
-              records,
-              current,
-              size,
-              total: ROLE_LIST_DATA.length
-            })
-          }, 300)
-        })
-
-        // 正式接口：return fetchGetRoleList(params)
+        // 调用后端接口获取角色列表
+        return fetchGetRoleList({
+          roleName: params.roleName || undefined,
+          roleCode: params.roleCode || undefined,
+          enabled: params.enabled === '' ? undefined : Number(params.enabled),
+          page: params.current,
+          pageSize: params.size,
+        }).then((res) => ({
+          records: res.data.data.list,
+          current: res.data.data.page,
+          size: res.data.data.pageSize,
+          total: res.data.data.total,
+        }));
       },
       apiParams: {
         current: 1,
-        size: 20,
+        size: 10,
         // ...searchFormState.value
       },
-      // 排除 apiParams 中的属性
-      excludeParams: ['daterange'],
-      // 自定义分页字段映射，未设置时将使用全局配置 tableConfig.ts 中的 paginationKey
-      // paginationKey: {
-      //   current: 'pageNum',
-      //   size: 'pageSize'
-      // },
       immediate: true, // 是否立即加载数据
       columnsFactory: () => [
         { type: 'selection', width: 50 },
@@ -341,6 +311,9 @@ import { ROLE_LIST_DATA } from '@/mock/temp/formData'
     }
   })
 
+  console.log(pagination, '分页信息')
+  
+
     // 事件处理函数
   const handleSelectionChange = (selection: RoleListItem[]) => {
     selectedRows.value = selection
@@ -396,7 +369,44 @@ import { ROLE_LIST_DATA } from '@/mock/temp/formData'
   const computedTableHeight = computed(() => '')
 
   const handleAdd = () => {
-    ElMessage.info('新增角色')
+    dialogType.value = 'add'
+    currentRole.value = undefined
+    dialogVisible.value = true
+  }
+
+  /**
+   * 打开编辑弹窗
+   * @param row 当前行数据
+   */
+  const handleEdit = (row: RoleListItem) => {
+    dialogType.value = 'edit'
+    currentRole.value = row
+    dialogVisible.value = true
+  }
+
+  /**
+   * 删除单个角色
+   * @param row 当前行数据
+   */
+  const handleDelete = async (row: RoleListItem) => {
+    try {
+      await ElMessageBox.confirm(`确定要删除角色「${row.roleName}」吗？`, '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+
+      await fetchDeleteRole(row.roleId)
+      ElMessage.success(`删除角色「${row.roleName}」成功`)
+      // 智能刷新：删除后自动调整页码，避免停留在空页面
+      refreshRemove()
+    } catch (error: any) {
+      if (error?.response?.data?.msg) {
+        ElMessage.error(error.response.data.msg)
+      } else {
+        ElMessage.info('已取消删除')
+      }
+    }
   }
 
   const handleBatchDelete = async () => {
@@ -411,13 +421,18 @@ import { ROLE_LIST_DATA } from '@/mock/temp/formData'
         }
       )
 
+      // 循环调用删除接口逐条删除
+      await Promise.all(selectedRows.value.map((row) => fetchDeleteRole(row.roleId)))
+
       ElMessage.success(`批量删除 ${selectedRows.value.length} 个角色成功`)
       selectedRows.value = []
-      setTimeout(() => {
-        refreshRemove()
-      }, 1000)
-    } catch {
-      ElMessage.info('已取消删除')
+      refreshRemove()
+    } catch (error: any) {
+      if (error?.response?.data?.msg) {
+        ElMessage.error(error.response.data.msg)
+      } else {
+        ElMessage.info('已取消删除')
+      }
     }
   }
 
@@ -426,8 +441,13 @@ import { ROLE_LIST_DATA } from '@/mock/temp/formData'
     ElMessage.info('数据已清空')
   }
 
-  const handleView = (row: any) => {
-    ElMessage.info(`查看角色 ${row.roleName}`)
+  /**
+   * 打开查看弹窗
+   * @param row 当前行数据
+   */
+  const handleView = (row: RoleListItem) => {
+    viewRole.value = row
+    viewDialogVisible.value = true
   }
 </script>
 
