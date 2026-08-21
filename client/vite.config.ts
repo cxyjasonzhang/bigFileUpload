@@ -38,6 +38,7 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
       "@stores": fileURLToPath(new URL("./src/stores", import.meta.url)),
       "@styles": fileURLToPath(new URL("./src/styles", import.meta.url)),
+      '@imgs': fileURLToPath(new URL("./src/assets/images", import.meta.url)),
     },
   },
   css: {

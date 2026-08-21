@@ -10,23 +10,16 @@ const ACCESS_TOKEN_EXPIRES = "15m"
 const REFRESH_TOKEN_EXPIRES = "7d"
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 3600 * 1000 // 7 天（毫秒）
 
-// Demo 用户数据
-const DEMO_USER = {
-  id: "user_001",
-  username: "admin",
-  password: "admin123",
-  name: "管理员",
-}
-
 // refresh token 吊销表（内存版，生产用 Redis）
 const revokedTokens = new Map()
 
 /**
  * 生成 access token（短时效，15 分钟）
+ * @param {object} user - { id, account, username }
  */
 function generateAccessToken(user) {
   return jwt.sign(
-    { sub: user.id, username: user.username, name: user.name },
+    { sub: user.id, account: user.account, username: user.username },
     JWT_SECRET,
     { expiresIn: ACCESS_TOKEN_EXPIRES },
   )
@@ -86,7 +79,6 @@ function authMiddleware(req, res, next) {
 }
 
 module.exports = {
-  DEMO_USER,
   revokedTokens,
   JWT_SECRET,
   REFRESH_SECRET,

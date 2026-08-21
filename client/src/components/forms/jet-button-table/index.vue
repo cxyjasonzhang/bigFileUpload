@@ -40,7 +40,7 @@
     edit: { icon: 'sys/edit', class: 'bg-secondary/12 text-secondary' },
     delete: { icon: 'sys/delete', class: 'bg-error/12 text-error' },
     view: { icon: 'sys/preview', class: 'bg-info/12 text-info' },
-    more: { icon: 'sys/plus', class: '' }
+    more: { icon: 'sys/plus', class: 'bg-theme/12 text-theme' }
   } as const
 
   // 获取图标内容

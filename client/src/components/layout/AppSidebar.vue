@@ -12,10 +12,28 @@
       class="sidebar-menu"
       @select="handleSelect"
     >
-      <el-menu-item v-for="item in menuItems" :key="item.path" :index="item.path">
-        <el-icon><component :is="item.icon" /></el-icon>
-        <template #title>{{ item.title }}</template>
-      </el-menu-item>
+      <!-- 动态菜单树：目录（menuType=0）渲染为子菜单，菜单（menuType=1）渲染为菜单项 -->
+      <template v-for="item in menuTree" :key="item.menuId">
+        <!-- 目录：有子级时渲染为 el-sub-menu，否则退化为菜单项 -->
+        <el-sub-menu v-if="item.menuType === 0 && item.children?.length" :index="String(item.menuId)">
+          <template #title>
+            <el-icon v-if="item.icon"><component :is="item.icon" /></el-icon>
+            <span>{{ item.menuName }}</span>
+          </template>
+          <template v-for="child in item.children" :key="child.menuId">
+            <el-menu-item v-if="child.menuType === 1" :index="child.path">
+              <el-icon v-if="child.icon"><component :is="child.icon" /></el-icon>
+              <template #title>{{ child.menuName }}</template>
+            </el-menu-item>
+          </template>
+        </el-sub-menu>
+
+        <!-- 菜单（或没有子级的目录）：直接渲染为菜单项 -->
+        <el-menu-item v-else-if="item.menuType === 1 || !item.children?.length" :index="item.path">
+          <el-icon v-if="item.icon"><component :is="item.icon" /></el-icon>
+          <template #title>{{ item.menuName }}</template>
+        </el-menu-item>
+      </template>
     </el-menu>
   </div>
 </template>
@@ -23,17 +41,21 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { useRoute, useRouter } from "vue-router";
-import { menuItems } from "@/composables/menuConfig";
 import { useLayoutStore } from "@/stores/layout";
+import { usePermissionStore } from "@/stores/permission";
 
 const route = useRoute();
 const router = useRouter();
 const layout = useLayoutStore();
+const permission = usePermissionStore();
 const { collapsed } = storeToRefs(layout);
+const { menuTree } = storeToRefs(permission);
 
-// 菜单点击 → 路由导航（menu item 的 index 即路由 path）
+// 菜单点击 → 路由导航（菜单项的 index 即路由 path）
 function handleSelect(index: string) {
-  router.push(index);
+  if (index.startsWith("/")) {
+    router.push(index);
+  }
 }
 </script>
 
@@ -71,7 +93,8 @@ function handleSelect(index: string) {
   background: transparent;
 }
 
-.sidebar-menu :deep(.el-menu-item) {
+.sidebar-menu :deep(.el-menu-item),
+.sidebar-menu :deep(.el-sub-menu__title) {
   color: var(--app-text-regular);
 }
 
@@ -80,7 +103,8 @@ function handleSelect(index: string) {
   background: var(--app-menu-active-bg);
 }
 
-.sidebar-menu :deep(.el-menu-item:hover) {
+.sidebar-menu :deep(.el-menu-item:hover),
+.sidebar-menu :deep(.el-sub-menu__title:hover) {
   background: var(--app-menu-hover-bg);
 }
 </style>

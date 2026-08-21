@@ -5,6 +5,8 @@ import {
   setupAuthInterceptor,
   type ApiResponse,
   type User,
+  fetchUserRoutes,
+  fetchUserPermissions,
 } from "./api";
 
 // ─── access token 只存在内存中（不落盘） ──────────────────
@@ -59,7 +61,41 @@ export async function login(
   setAccessToken(res.data.access_token);
   authState.user = res.data.user;
   authState.isLoggedIn = true;
+
+  // 登录成功后拉取动态菜单与权限（失败不阻断登录跳转）
+  try {
+    await loadDynamicAccess();
+  } catch (err) {
+    console.error("拉取动态菜单失败（不影响登录）:", err);
+  }
   return res.data;
+}
+
+/**
+ * 拉取动态菜单 + 权限点，并注册动态路由
+ * 登录与刷新恢复时都会调用
+ */
+export async function loadDynamicAccess(): Promise<void> {
+  const { usePermissionStore } = await import("@/stores/permission");
+  const { registerDynamicRoutes } = await import("@/router/dynamic");
+  const permission = usePermissionStore();
+
+  // 拉取权限点与角色
+  const permRes = await fetchUserPermissions();
+  if (permRes.data.code === 0) {
+    permission.setPermissions(permRes.data.data.perms, permRes.data.data.roles);
+  }
+
+  // 拉取动态菜单并组装树
+  const routeRes = await fetchUserRoutes();
+  if (routeRes.data.code === 0) {
+    const list = routeRes.data.data.list;
+    console.log(list, 'list');
+    permission.setMenus(list);
+    // 注册动态路由（幂等：重复调用会先清旧再注入）
+    registerDynamicRoutes(permission.menuTree);
+    permission.isRoutesLoaded = true;
+  }
 }
 
 // ─── 刷新并发锁 ──────────────────────────────────────────
@@ -124,6 +160,9 @@ export async function logout(): Promise<void> {
   clearAccessToken();
   authState.user = null;
   authState.isLoggedIn = false;
+  // 清空权限状态
+  const { usePermissionStore } = await import("@/stores/permission");
+  usePermissionStore().reset();
 }
 
 /**
@@ -142,6 +181,12 @@ export async function initAuth(): Promise<boolean> {
     if (res.code === 0 && res.data.user) {
       authState.user = res.data.user;
       authState.isLoggedIn = true;
+      // 恢复登录态后拉取动态菜单与权限（失败不阻断恢复）
+      try {
+        await loadDynamicAccess();
+      } catch (err) {
+        console.error("恢复登录态时拉取动态菜单失败:", err);
+      }
       return true;
     }
   } catch {

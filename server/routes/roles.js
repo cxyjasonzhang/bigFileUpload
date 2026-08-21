@@ -3,6 +3,7 @@
 const express = require("express");
 const { authMiddleware } = require("../middleware/auth");
 const { getRoleList, insertRole, updateRole, deleteRole } = require("../db/roleApi");
+const { getRoleMenuIds, saveRoleMenus, getAllMenus } = require("../db/rbacApi");
 
 const router = express.Router();
 
@@ -122,6 +123,60 @@ router.delete("/:id", async (req, res) => {
     res.json({ code: 0, msg: "删除角色成功" });
   } catch (err) {
     console.error("删除角色失败:", err);
+    res.status(500).json({ code: -1, msg: "服务器内部错误，请稍后重试" });
+  }
+});
+
+/**
+ * 查询全量菜单树（授权弹窗的数据源，平铺列表）
+ * GET /roles/menus/tree
+ * 注意：必须放在 /:id/menus 之前，否则 "menus" 会被匹配为 :id
+ */
+router.get("/menus/tree", async (req, res) => {
+  try {
+    const list = await getAllMenus();
+    res.json({ code: 0, data: { list } });
+  } catch (err) {
+    console.error("查询菜单树失败:", err);
+    res.status(500).json({ code: -1, msg: "服务器内部错误，请稍后重试" });
+  }
+});
+
+/**
+ * 查询角色的菜单授权（menu_id 集合）
+ * GET /roles/:id/menus
+ */
+router.get("/:id/menus", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ code: -1, msg: "角色ID不合法" });
+
+    const menuIds = await getRoleMenuIds(id);
+    res.json({ code: 0, data: { menuIds } });
+  } catch (err) {
+    console.error("查询角色授权失败:", err);
+    res.status(500).json({ code: -1, msg: "服务器内部错误，请稍后重试" });
+  }
+});
+
+/**
+ * 保存角色菜单授权（全量覆盖）
+ * PUT /roles/:id/menus  body: { menuIds: number[] }
+ */
+router.put("/:id/menus", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ code: -1, msg: "角色ID不合法" });
+
+    const { menuIds = [] } = req.body;
+    if (!Array.isArray(menuIds)) {
+      return res.status(400).json({ code: -1, msg: "授权菜单格式不合法" });
+    }
+
+    await saveRoleMenus(id, menuIds);
+    res.json({ code: 0, msg: "保存授权成功" });
+  } catch (err) {
+    console.error("保存角色授权失败:", err);
     res.status(500).json({ code: -1, msg: "服务器内部错误，请稍后重试" });
   }
 });

@@ -76,6 +76,7 @@
           <div class="flex">
             <JetButtonTable type="view" :row="row" @click="handleView(row)" />
             <JetButtonTable type="edit" :row="row" @click="handleEdit(row)" />
+            <ElButton link type="primary" size="small" @click="handleAssign(row)">分配权限</ElButton>
             <JetButtonTable type="delete" :row="row" @click="handleDelete(row)" />
           </div>
         </template>
@@ -92,6 +93,9 @@
 
     <!-- 角色查看弹窗 -->
     <RoleViewDialog v-model="viewDialogVisible" :role-data="viewRole" />
+
+    <!-- 角色授权弹窗 -->
+    <RolePermissionDialog v-model="permissionDialogVisible" :role-data="currentRole" />
   </div>
 </template>
 
@@ -103,6 +107,7 @@ import { useTable } from '@/hooks/core/useTable'
 import { fetchGetRoleList, fetchDeleteRole } from '@/utils/api'
 import RoleEditDialog from './modules/role-edit-dialog.vue'
 import RoleViewDialog from './modules/role-view-dialog.vue'
+import RolePermissionDialog from './modules/role-permission-dialog.vue'
 
   type RoleListItem = Api.SystemManage.RoleListItem
 
@@ -117,6 +122,9 @@ import RoleViewDialog from './modules/role-view-dialog.vue'
   // 角色查看弹窗状态
   const viewDialogVisible = ref(false)
   const viewRole = ref<RoleListItem>()
+
+  // 角色授权弹窗状态
+  const permissionDialogVisible = ref(false)
 
   // 搜索表单 ref
   const searchBarRef = ref()
@@ -311,10 +319,7 @@ import RoleViewDialog from './modules/role-view-dialog.vue'
     }
   })
 
-  console.log(pagination, '分页信息')
-  
-
-    // 事件处理函数
+  // 事件处理函数
   const handleSelectionChange = (selection: RoleListItem[]) => {
     selectedRows.value = selection
     console.log('选择变更:', selection)
@@ -448,6 +453,15 @@ import RoleViewDialog from './modules/role-view-dialog.vue'
   const handleView = (row: RoleListItem) => {
     viewRole.value = row
     viewDialogVisible.value = true
+  }
+
+  /**
+   * 打开授权弹窗
+   * @param row 当前行数据
+   */
+  const handleAssign = (row: RoleListItem) => {
+    currentRole.value = row
+    permissionDialogVisible.value = true
   }
 </script>
 

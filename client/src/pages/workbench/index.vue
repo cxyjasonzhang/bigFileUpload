@@ -18,22 +18,33 @@
         <div class="entry-icon">
           <el-icon size="36"><component :is="item.icon" /></el-icon>
         </div>
-        <h3>{{ item.title }}</h3>
-        <p>{{ item.desc }}</p>
+        <h3>{{ item.menuName }}</h3>
       </el-card>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { useRouter } from "vue-router";
-import { menuItems } from "@/composables/menuConfig";
+import { storeToRefs } from "pinia";
+import { usePermissionStore } from "@/stores/permission";
 import { authState } from "@/utils/auth";
 
-// 工作台固定为帧，不显示在入口卡片里
-const entries = menuItems.filter((m) => m.path !== "/workbench");
-
 defineOptions({ name: "Workbench" });
+
+const permission = usePermissionStore();
+const { menuTree } = storeToRefs(permission);
+
+// 从动态菜单树扁平化出「菜单」节点（menuType=1），工作台不显示在入口卡片里
+const entries = computed(() => {
+  const flatten = (nodes: any[]): any[] =>
+    nodes.flatMap((n) => [
+      ...(n.menuType === 1 ? [n] : []),
+      ...(n.children ? flatten(n.children) : []),
+    ]);
+  return flatten(menuTree.value).filter((m) => m.path !== "/workbench");
+});
 
 const router = useRouter();
 function go(path: string) {

@@ -18,11 +18,15 @@ import router from "./router";
 import { createPinia } from "pinia";
 import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 import { setupAuth, initAuth } from "./utils/auth";
+import { setupPermission } from "./utils/permission";
 
 // 注册认证拦截器（401 自动刷新、自动附加 Authorization 头）
 setupAuth();
 
 const app = createApp(App);
+
+// 注册 v-perms 权限指令（按钮级显隐控制）
+setupPermission(app);
 
 // 注册 Pinia 及状态持久化插件
 const pinia = createPinia();

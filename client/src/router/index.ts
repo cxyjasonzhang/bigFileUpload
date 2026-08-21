@@ -1,7 +1,5 @@
-// 路由表：嵌套路由 + 历史 Tab 模型（Pattern A）
-//   /login          公开路由（无外壳，登录页）
-//   /        (AppLayout 外壳) ── 子路由 /workbench /upload /users /icons
-// 鉴权由 beforeEach 守卫统一处理；afterEach 把受保护路由补入「已访问列表」
+// 路由表：静态路由（login / 布局壳 / 404）+ 动态菜单路由（addRoute 注入）
+// 鉴权由 beforeEach 守卫统一处理；动态菜单在登录后按角色下发并动态注册
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
 import { authState } from "@/utils/auth";
@@ -19,6 +17,13 @@ declare module "vue-router" {
   }
 }
 
+// 布局壳（动态路由的父级）
+const Layout = () => import("@/components/layout/AppLayout.vue");
+
+/**
+ * 静态路由：登录页、布局壳（挂载动态子路由）、404 兜底
+ * 业务页面不再静态声明，统一由后端菜单下发后动态注册
+ */
 const routes: RouteRecordRaw[] = [
   {
     path: "/login",
@@ -28,49 +33,25 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: "/",
-    component: () => import("@/components/layout/AppLayout.vue"),
+    name: "Layout",
+    component: Layout,
     redirect: "/workbench",
     children: [
       {
-        path: "workbench",
+        path: "/workbench",
         name: "Workbench",
         component: () => import("@/pages/workbench/index.vue"),
-        meta: { title: "工作台", componentName: "Workbench" },
-      },
-      {
-        path: "upload",
-        name: "FileUpload",
-        component: () => import("@/pages/fileUpload/index.vue"),
-        meta: { title: "文件上传", componentName: "FileUpload" },
-      },
-      {
-        path: "users",
-        name: "UserManagement",
-        component: () => import("@/pages/userManagement/index.vue"),
-        meta: { title: "用户管理", componentName: "UserManagement" },
-      },
-      {
-        path: "icons",
-        name: "IconManager",
-        component: () => import("@/pages/iconManager/index.vue"),
-        meta: { title: "图标管理", componentName: "IconManager" },
-      },
-      {
-        path: "workflow",
-        name: "Workflow",
-        component: () => import("@/pages/workflow/index.vue"),
-        meta: { title: "工作流", componentName: "Workflow" },
-      },
-      {
-        path: "roleManage",
-        name: "RoleManage",
-        component: () => import("@/pages/roleManage/index.vue"),
-        meta: { title: "角色管理", componentName: "Form" },
+        meta: { title: "工作台" },
       },
     ],
   },
-  // 兜底：未知路径回到工作台
-  { path: "/:pathMatch(.*)*", redirect: "/workbench" },
+  // 兜底：未知路径 → 404（动态路由未覆盖到的地址都落到这里）
+  {
+    path: "/:pathMatch(.*)*",
+    name: "NotFound",
+    component: () => import("@/pages/exception/404/index.vue"),
+    meta: { public: true, title: "404" },
+  },
 ];
 
 const router = createRouter({
@@ -105,3 +86,6 @@ router.afterEach((to) => {
 });
 
 export default router;
+
+// 主页路径, 默认使用菜单中第一个有效路径 
+export const HOME_PAGE_PATH = ''

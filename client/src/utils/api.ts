@@ -178,6 +178,56 @@ export function fetchDeleteRole(id: number) {
   return request.delete<ApiResponse<unknown>>(`/roles/${id}`);
 }
 
+// ─── 菜单管理接口 ─────────────────────────────────────────
+
+/** 菜单类型：0-目录，1-菜单，2-按钮 */
+export type MenuType = 0 | 1 | 2;
+
+/** 菜单列表返回结构（菜单项结构见 Api.SystemManage.MenuListItem） */
+export interface MenuListResult {
+  list: Api.SystemManage.MenuListItem[];
+}
+
+/** 菜单表单提交参数 */
+export interface MenuItemPayload {
+  parentId: number;
+  menuName: string;
+  menuType: MenuType;
+  path?: string;
+  /** 组件相对路径（如 roleManage/index），仅菜单类型必填 */
+  component?: string;
+  perms?: string;
+  icon?: string;
+  orderNum?: number;
+  isIframe?: number;
+  status?: number;
+}
+
+/** 获取菜单列表（全量平铺，前端组装树） */
+export function fetchGetMenuList() {
+  return request.get<ApiResponse<MenuListResult>>("/menus");
+}
+
+/** 新建菜单 */
+export function fetchCreateMenu(data: MenuItemPayload) {
+  return request.post<ApiResponse<unknown>>("/menus", data);
+}
+
+/** 编辑菜单 */
+export function fetchUpdateMenu(id: number, data: MenuItemPayload) {
+  return request.put<ApiResponse<unknown>>(`/menus/${id}`, data);
+}
+
+/** 删除菜单（软删除） */
+export function fetchDeleteMenu(id: number) {
+  return request.delete<ApiResponse<unknown>>(`/menus/${id}`);
+}
+
+/** 菜单上移/下移（与同级交换排序号） */
+export function fetchMoveMenu(id: number, direction: "up" | "down") {
+  return request.put<ApiResponse<unknown>>(`/menus/${id}/move`, { direction });
+}
+
 // ─── 用户管理接口 ─────────────────────────────────────────
 
 /** 获取用户列表（分页 + 搜索） */
@@ -274,6 +324,33 @@ export function deleteIcon(id: number) {
 /** 批量删除图标 */
 export function batchDeleteIcons(ids: number[]) {
   return request.delete<ApiResponse<unknown>>("/icons/batch", { data: { ids } });
+}
+
+// ─── RBAC 动态菜单 / 权限接口 ─────────────────────────────
+
+/** 获取当前用户动态菜单（平铺列表） */
+export function fetchUserRoutes() {
+  return request.get<ApiResponse<{ list: Api.SystemManage.MenuListItem[] }>>("/auth/routes");
+}
+
+/** 获取当前用户权限点集合与角色 */
+export function fetchUserPermissions() {
+  return request.get<ApiResponse<{ roles: string[]; perms: string[] }>>("/auth/permissions");
+}
+
+/** 获取角色的菜单授权（menu_id 集合） */
+export function fetchRoleMenuIds(roleId: number) {
+  return request.get<ApiResponse<{ menuIds: number[] }>>(`/roles/${roleId}/menus`);
+}
+
+/** 获取全量菜单（授权弹窗数据源） */
+export function fetchAllMenus() {
+  return request.get<ApiResponse<{ list: Api.SystemManage.MenuListItem[] }>>("/roles/menus/tree");
+}
+
+/** 保存角色菜单授权（全量覆盖） */
+export function saveRoleMenus(roleId: number, menuIds: number[]) {
+  return request.put<ApiResponse<unknown>>(`/roles/${roleId}/menus`, { menuIds });
 }
 
 // ─── 认证拦截器注册（由 auth.ts 的 setupAuth 调用） ───

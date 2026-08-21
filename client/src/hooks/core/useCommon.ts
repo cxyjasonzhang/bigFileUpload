@@ -16,18 +16,18 @@
  */
 
 import { computed } from 'vue'
-// import { useMenuStore } from '@/store/modules/menu'
+import { usePermissionStore } from "@/stores/permission";
 // import { useSettingStore } from '@/store/modules/setting'
 
 export function useCommon() {
-  // const menuStore = useMenuStore()
+  const permissionStore = usePermissionStore()
   // const settingStore = useSettingStore()
 
   /**
    * 首页路径
    * 从菜单 store 中获取配置的首页路径
-  //  */
-  // const homePath = computed(() => menuStore.getHomePath())
+   */
+  const homePath = computed(() => permissionStore.getHomePath())
 
   // /**
   //  * 刷新当前页面
@@ -78,7 +78,7 @@ export function useCommon() {
   }
 
   return {
-    // homePath,
+    homePath,
     // refresh,
     scrollTo,
     scrollToTop,
