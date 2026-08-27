@@ -6,6 +6,7 @@ import axios, {
   type AxiosProgressEvent,
   type AxiosError,
 } from "axios";
+import type { MenuItem, MenuType } from "@/types/system/menu";
 
 const BASE_URL = "/api";
 
@@ -180,12 +181,12 @@ export function fetchDeleteRole(id: number) {
 
 // ─── 菜单管理接口 ─────────────────────────────────────────
 
-/** 菜单类型：0-目录，1-菜单，2-按钮 */
-export type MenuType = 0 | 1 | 2;
+// 菜单类型：0-目录，1-菜单，2-按钮（re-export 自主类型模块，保持唯一来源）
+export type { MenuType } from "@/types/system/menu";
 
-/** 菜单列表返回结构（菜单项结构见 Api.SystemManage.MenuListItem） */
+/** 菜单列表返回结构 */
 export interface MenuListResult {
-  list: Api.SystemManage.MenuListItem[];
+  list: MenuItem[];
 }
 
 /** 菜单表单提交参数 */
@@ -331,7 +332,7 @@ export function batchDeleteIcons(ids: number[]) {
 
 /** 获取当前用户动态菜单（平铺列表） */
 export function fetchUserRoutes() {
-  return request.get<ApiResponse<{ list: Api.SystemManage.MenuListItem[] }>>("/auth/routes");
+  return request.get<ApiResponse<{ list: MenuItem[] }>>("/auth/routes");
 }
 
 /** 获取当前用户权限点集合与角色 */
@@ -346,7 +347,7 @@ export function fetchRoleMenuIds(roleId: number) {
 
 /** 获取全量菜单（授权弹窗数据源） */
 export function fetchAllMenus() {
-  return request.get<ApiResponse<{ list: Api.SystemManage.MenuListItem[] }>>("/roles/menus/tree");
+  return request.get<ApiResponse<{ list: MenuItem[] }>>("/roles/menus/tree");
 }
 
 /** 保存角色菜单授权（全量覆盖） */

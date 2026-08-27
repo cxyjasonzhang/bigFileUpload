@@ -135,26 +135,5 @@ declare namespace Api {
         }
     >
 
-    /** 菜单列表项（平铺结构，前端组装成树） */
-    interface MenuListItem {
-      menuId: number
-      parentId: number
-      menuName: string
-      /** 菜单类型：0-目录，1-菜单，2-按钮 */
-      menuType: number
-      path: string
-      /** 组件相对路径（如 roleManage/index），目录/按钮可空 */
-      component: string
-      perms: string
-      icon: string
-      orderNum: number
-      /** 是否 iframe 嵌入：0-否，1-是 */
-      isIframe: number
-      /** 是否全屏展示：0-否，1-是（打开时隐藏侧边栏/顶栏/Tab，仅菜单类型有效） */
-      isFullScreen: number
-      /** 状态：0-正常，1-停用 */
-      status: number
-      createTime: string
-    }
   }
 }

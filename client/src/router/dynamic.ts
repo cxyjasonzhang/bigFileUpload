@@ -2,7 +2,7 @@
 
 import { defineComponent, h } from "vue";
 import type { RouteRecordRaw } from "vue-router";
-import type { MenuItem } from "@/types/router";
+import type { MenuTree } from "@/types/router";
 import router from "./index";
 
 // 预扫描所有页面组件
@@ -58,10 +58,10 @@ function resolveComponent(component?: string) {
 /**
  * 将菜单树转换为路由记录（只处理菜单类型为 1 的节点，目录仅用于侧边栏折叠）
  */
-function menuToRoutes(menus: MenuItem[]): RouteRecordRaw[] {
+function menuToRoutes(menus: MenuTree[]): RouteRecordRaw[] {
   const routes: RouteRecordRaw[] = [];
 
-  const walk = (nodes: MenuItem[]) => {
+  const walk = (nodes: MenuTree[]) => {
     nodes.forEach((node) => {
       // 目录（menuType=0）不生成路由，仅递归子级
       if (node.menuType === 1) {
@@ -94,7 +94,7 @@ function menuToRoutes(menus: MenuItem[]): RouteRecordRaw[] {
  * 注册动态路由：清空布局壳子路由后重新注入
  * @param menuTree 当前用户的菜单树
  */
-export function registerDynamicRoutes(menuTree: MenuItem[]) {
+export function registerDynamicRoutes(menuTree: MenuTree[]) {
   const layoutRoute = router.getRoutes().find((r) => r.name === "Layout");
   if (!layoutRoute) return;
 

@@ -38,7 +38,7 @@
   import type { ElTree } from 'element-plus'
   import DraggableDialog from '@/components/DraggableDialog.vue'
   import { fetchAllMenus, fetchRoleMenuIds, saveRoleMenus } from '@/utils/api'
-  import type { MenuItem } from '@/types/router'
+  import type { MenuItem, MenuTree } from '@/types/router'
 
   type RoleListItem = Api.SystemManage.RoleListItem
 
@@ -61,7 +61,7 @@
 
   const treeRef = ref<InstanceType<typeof ElTree>>()
   const submitting = ref(false)
-  const menuTree = ref<MenuItem[]>([])
+  const menuTree = ref<MenuTree[]>([])
   /** 当前角色已授权的 menu_id 集合 */
   const checkedKeys = ref<number[]>([])
 
@@ -76,10 +76,10 @@
   /**
    * 平铺菜单组装成树（授权树含目录/菜单/按钮三层）
    */
-  const buildTree = (list: MenuItem[]): MenuItem[] => {
-    const map = new Map<number, MenuItem>()
+  const buildTree = (list: MenuItem[]): MenuTree[] => {
+    const map = new Map<number, MenuTree>()
     list.forEach((item) => map.set(item.menuId, { ...item, children: [] }))
-    const roots: MenuItem[] = []
+    const roots: MenuTree[] = []
     list.forEach((item) => {
       const node = map.get(item.menuId)!
       if (item.parentId === 0 || !map.has(item.parentId)) {

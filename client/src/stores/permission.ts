@@ -4,7 +4,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { HOME_PAGE_PATH } from '@/router'
 import { getFirstMenuPath } from '@/utils/permission'
-import type { MenuItem } from "@/types/router";
+import type { MenuItem, MenuTree } from "@/types/router";
 
 export const usePermissionStore = defineStore("permission", () => {
   /** 首页路径 */
@@ -12,7 +12,7 @@ export const usePermissionStore = defineStore("permission", () => {
   /** 后端下发的菜单平铺列表（原始数据） */
   const menuList = ref<MenuItem[]>([]);
   /** 组装后的菜单树（侧边栏渲染数据） */
-  const menuTree = ref<MenuItem[]>([]);
+  const menuTree = ref<MenuTree[]>([]);
   /** 按钮权限点集合（如 role:add） */
   const perms = ref<string[]>([]);
   /** 当前用户角色编码集合 */
@@ -24,7 +24,8 @@ export const usePermissionStore = defineStore("permission", () => {
   function setMenus(list: MenuItem[]) {
     menuList.value = list;
     menuTree.value = buildTree(list);
-    setHomePath(HOME_PAGE_PATH || getFirstMenuPath(list))
+    // 首页取树形菜单的第一个有效路径（需在组装树之后）
+    setHomePath(HOME_PAGE_PATH || getFirstMenuPath(menuTree.value))
   }
 
   /** 设置权限点与角色 */
@@ -81,11 +82,11 @@ export const usePermissionStore = defineStore("permission", () => {
  * 平铺菜单列表组装成树
  * 父节点缺失时降级为根节点，避免断头
  */
-function buildTree(list: MenuItem[]): MenuItem[] {
-  const map = new Map<number, MenuItem>();
+function buildTree(list: MenuItem[]): MenuTree[] {
+  const map = new Map<number, MenuTree>();
   list.forEach((item) => map.set(item.menuId, { ...item, children: [] }));
 
-  const roots: MenuItem[] = [];
+  const roots: MenuTree[] = [];
   list.forEach((item) => {
     const node = map.get(item.menuId)!;
     if (item.parentId === 0 || !map.has(item.parentId)) {

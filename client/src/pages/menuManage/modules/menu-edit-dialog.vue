@@ -88,11 +88,12 @@
   import DraggableDialog from '@/components/DraggableDialog.vue'
   import { fetchCreateMenu, fetchUpdateMenu } from '@/utils/api'
   import type { MenuItemPayload, MenuType } from '@/utils/api'
+  import type { MenuItem, MenuTree } from '@/types/system/menu'
 
-  type MenuListItem = Api.SystemManage.MenuListItem
+  type MenuListItem = MenuItem
 
   /** 菜单树节点（平铺数据组装后的结构） */
-  type MenuTreeNode = MenuListItem & { children?: MenuTreeNode[] }
+  type MenuTreeNode = MenuTree
 
   interface Props {
     modelValue: boolean
@@ -166,8 +167,7 @@
     orderNum: 0,
     isIframe: 0,
     isFullScreen: 0,
-    status: 0,
-    createTime: ''
+    status: 0
   })
 
   /**
@@ -285,8 +285,7 @@
         orderNum: 0,
         isIframe: 0,
         isFullScreen: 0,
-        status: 0,
-        createTime: ''
+        status: 0
       })
     }
   }
@@ -320,7 +319,8 @@
         menuType: form.menuType as MenuType,
         path: form.path,
         component: form.component,
-        perms: form.perms,
+        // perms 可能为 null（数据库空值），提交时归一化为 undefined
+        perms: form.perms ?? undefined,
         icon: form.icon,
         orderNum: form.orderNum,
         isIframe: form.isIframe,

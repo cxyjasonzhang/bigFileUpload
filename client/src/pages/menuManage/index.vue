@@ -101,9 +101,10 @@
   import type { ColumnOption } from '@/types'
   // ElMessageBox 由 unplugin-auto-import 自动导入并注入样式（勿手动 import，否则样式不注入）
   import { fetchGetMenuList, fetchDeleteMenu, fetchMoveMenu } from '@/utils/api'
+  import type { MenuItem } from '@/types/system/menu'
   import MenuEditDialog from './modules/menu-edit-dialog.vue'
 
-  type MenuListItem = Api.SystemManage.MenuListItem
+  type MenuListItem = MenuItem
 
   /**
    * 菜单树节点

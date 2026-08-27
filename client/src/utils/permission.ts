@@ -2,7 +2,7 @@
 
 import type { App, Directive } from "vue";
 import { usePermissionStore } from "@/stores/permission";
-import type { MenuItem } from "@/types/router";
+import type { MenuTree } from "@/types/router";
 
 /**
  * 判断当前用户是否拥有某个权限点
@@ -50,7 +50,7 @@ const normalizePath = (path: string): string => {
  * @param menuList 菜单列表
  * @returns 第一个有效路径，如果没有找到则返回空字符串
  */
-export const getFirstMenuPath = (menuList: MenuItem[]): string => {
+export const getFirstMenuPath = (menuList: MenuTree[]): string => {
   if (!Array.isArray(menuList) || menuList.length === 0) {
     return ''
   }
