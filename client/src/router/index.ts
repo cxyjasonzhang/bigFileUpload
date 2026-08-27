@@ -14,6 +14,8 @@ declare module "vue-router" {
     title?: string;
     /** 组件名（用于 keep-alive :include 缓存匹配） */
     componentName?: string;
+    /** 是否全屏展示：打开时隐藏侧边栏/顶栏/Tab，整页独立展示 */
+    isFullScreen?: boolean;
   }
 }
 

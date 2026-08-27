@@ -93,6 +93,7 @@ router.post("/", async (req, res) => {
       icon = "",
       orderNum = 0,
       isIframe = 0,
+      isFullScreen = 0,
       status = 0,
     } = req.body;
 
@@ -112,6 +113,7 @@ router.post("/", async (req, res) => {
       icon: (icon || "").trim(),
       orderNum: Number(orderNum) || 0,
       isIframe: Number(isIframe) ? 1 : 0,
+      isFullScreen: Number(isFullScreen) ? 1 : 0,
       status: Number(status) ? 1 : 0,
     });
 
@@ -141,6 +143,7 @@ router.put("/:id", async (req, res) => {
       icon = "",
       orderNum = 0,
       isIframe = 0,
+      isFullScreen = 0,
       status = 0,
     } = req.body;
 
@@ -160,6 +163,7 @@ router.put("/:id", async (req, res) => {
       icon: (icon || "").trim(),
       orderNum: Number(orderNum) || 0,
       isIframe: Number(isIframe) ? 1 : 0,
+      isFullScreen: Number(isFullScreen) ? 1 : 0,
       status: Number(status) ? 1 : 0,
     });
 

@@ -16,7 +16,7 @@
         @click="go(item.path)"
       >
         <div class="entry-icon">
-          <el-icon size="36"><component :is="item.icon" /></el-icon>
+          <SvgIcon :name="item.icon" color="#999" :size="25" />
         </div>
         <h3>{{ item.menuName }}</h3>
       </el-card>

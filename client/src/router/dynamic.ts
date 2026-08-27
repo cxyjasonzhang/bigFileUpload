@@ -77,6 +77,8 @@ function menuToRoutes(menus: MenuItem[]): RouteRecordRaw[] {
           meta: {
             title: node.menuName,
             componentName: routeName,
+            // 全屏展示标记：菜单打开时隐藏侧边栏/顶栏/Tab
+            isFullScreen: Number(node.isFullScreen) === 1,
           },
         });
       }

@@ -95,6 +95,7 @@ const getUserMenus = (userId) => {
              m.icon,
              m.order_num AS orderNum,
              m.is_iframe AS isIframe,
+             m.is_full_screen AS isFullScreen,
              m.status
        FROM sys_menu m
        JOIN sys_role_menu rm ON rm.menu_id = m.menu_id
@@ -128,6 +129,7 @@ const getAllMenus = () => {
              icon,
              order_num AS orderNum,
              is_iframe AS isIframe,
+             is_full_screen AS isFullScreen,
              status
        FROM sys_menu
        WHERE is_deleted = 0 AND status = 0

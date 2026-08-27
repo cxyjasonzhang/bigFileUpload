@@ -17,12 +17,17 @@
         <!-- 目录：有子级时渲染为 el-sub-menu，否则退化为菜单项 -->
         <el-sub-menu v-if="item.menuType === 0 && item.children?.length" :index="String(item.menuId)">
           <template #title>
-            <el-icon v-if="item.icon"><component :is="item.icon" /></el-icon>
+            <!-- 用 el-icon 包裹 SvgIcon：折叠时 el-menu--collapse 依赖 [class^=el-icon] 识别并显示图标 -->
+            <el-icon v-if="item.icon" class="menu-icon">
+              <SvgIcon :name="item.icon" color="currentColor" />
+            </el-icon>
             <span>{{ item.menuName }}</span>
           </template>
           <template v-for="child in item.children" :key="child.menuId">
             <el-menu-item v-if="child.menuType === 1" :index="child.path">
-              <el-icon v-if="child.icon"><component :is="child.icon" /></el-icon>
+              <el-icon v-if="child.icon" class="menu-icon">
+                <SvgIcon :name="child.icon" color="currentColor" />
+              </el-icon>
               <template #title>{{ child.menuName }}</template>
             </el-menu-item>
           </template>
@@ -30,7 +35,9 @@
 
         <!-- 菜单（或没有子级的目录）：直接渲染为菜单项 -->
         <el-menu-item v-else-if="item.menuType === 1 || !item.children?.length" :index="item.path">
-          <el-icon v-if="item.icon"><component :is="item.icon" /></el-icon>
+          <el-icon v-if="item.icon" class="menu-icon">
+            <SvgIcon :name="item.icon" color="currentColor" />
+          </el-icon>
           <template #title>{{ item.menuName }}</template>
         </el-menu-item>
       </template>
@@ -98,6 +105,15 @@ function handleSelect(index: string) {
   color: var(--app-text-regular);
 }
 
+.menu-icon {
+  margin-right: 8px;
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  /* 让内部 SvgIcon 跟随当前文字颜色，hover/active 时随父级变色 */
+  color: inherit;
+}
+
 .sidebar-menu :deep(.el-menu-item.is-active) {
   color: var(--el-color-primary);
   background: var(--app-menu-active-bg);
@@ -106,5 +122,16 @@ function handleSelect(index: string) {
 .sidebar-menu :deep(.el-menu-item:hover),
 .sidebar-menu :deep(.el-sub-menu__title:hover) {
   background: var(--app-menu-hover-bg);
+}
+
+/* 折叠态：el-menu--collapse 依赖 el-icon 显示图标，这里确保 svg 填满容器 */
+.sidebar-menu :deep(.menu-icon svg) {
+  width: 16px;
+  height: 16px;
+}
+
+.sidebar-menu :deep(.el-menu--popup .menu-icon) {
+  width: 16px;
+  height: 16px;
 }
 </style>

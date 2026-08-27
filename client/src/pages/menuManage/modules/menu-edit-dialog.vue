@@ -59,6 +59,12 @@
         <ElSwitch v-model="form.isIframe" :active-value="1" :inactive-value="0" />
       </ElFormItem>
 
+      <!-- 仅菜单类型可全屏展示（打开时隐藏侧边栏/顶栏/Tab，整页独立展示） -->
+      <ElFormItem v-if="form.menuType === 1" label="全屏展示">
+        <ElSwitch v-model="form.isFullScreen" :active-value="1" :inactive-value="0" />
+        <span class="form-tip">开启后隐藏侧边栏/顶栏，整页独立展示</span>
+      </ElFormItem>
+
       <ElFormItem label="排序号" prop="orderNum">
         <ElInputNumber v-model="form.orderNum" :min="-9999" :max="9999" controls-position="right" />
         <span class="form-tip">数值越小越靠前</span>
@@ -159,6 +165,7 @@
     icon: '',
     orderNum: 0,
     isIframe: 0,
+    isFullScreen: 0,
     status: 0,
     createTime: ''
   })
@@ -262,6 +269,7 @@
         icon: props.menuData.icon ?? '',
         orderNum: props.menuData.orderNum ?? 0,
         isIframe: props.menuData.isIframe ?? 0,
+        isFullScreen: props.menuData.isFullScreen ?? 0,
         status: props.menuData.status ?? 0
       })
     } else {
@@ -276,6 +284,7 @@
         icon: '',
         orderNum: 0,
         isIframe: 0,
+        isFullScreen: 0,
         status: 0,
         createTime: ''
       })
@@ -315,6 +324,7 @@
         icon: form.icon,
         orderNum: form.orderNum,
         isIframe: form.isIframe,
+        isFullScreen: form.isFullScreen,
         status: form.status
       }
 

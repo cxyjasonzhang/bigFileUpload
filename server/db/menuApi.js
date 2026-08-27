@@ -14,6 +14,7 @@ const MENU_COLUMNS = `
   icon,
   order_num AS orderNum,
   is_iframe AS isIframe,
+  is_full_screen AS isFullScreen,
   status,
   is_deleted AS isDeleted,
   create_time AS createTime
@@ -60,13 +61,13 @@ const getMenuById = (id) => {
  * 新增菜单
  * @param {object} param - { parentId, menuName, menuType, path, component, perms, icon, orderNum, isIframe, status }
  */
-const insertMenu = ({ parentId, menuName, menuType, path, component, perms, icon, orderNum, isIframe, status }) => {
+const insertMenu = ({ parentId, menuName, menuType, path, component, perms, icon, orderNum, isIframe, isFullScreen, status }) => {
   return new Promise((resolve, reject) => {
     connection.query(
       `INSERT INTO sys_menu
-         (parent_id, menu_name, menu_type, path, component, perms, icon, order_num, is_iframe, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [parentId, menuName, menuType, path || "", component || "", perms || null, icon || "", orderNum, isIframe, status],
+         (parent_id, menu_name, menu_type, path, component, perms, icon, order_num, is_iframe, is_full_screen, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [parentId, menuName, menuType, path || "", component || "", perms || null, icon || "", orderNum, isIframe, isFullScreen, status],
       (err, data) => {
         if (err) return reject(err);
         resolve(data);
@@ -80,13 +81,13 @@ const insertMenu = ({ parentId, menuName, menuType, path, component, perms, icon
  * @param {number} id - menu_id
  * @param {object} param - 同 insertMenu
  */
-const updateMenu = (id, { parentId, menuName, menuType, path, component, perms, icon, orderNum, isIframe, status }) => {
+const updateMenu = (id, { parentId, menuName, menuType, path, component, perms, icon, orderNum, isIframe, isFullScreen, status }) => {
   return new Promise((resolve, reject) => {
     connection.query(
       `UPDATE sys_menu
-       SET parent_id = ?, menu_name = ?, menu_type = ?, path = ?, component = ?, perms = ?, icon = ?, order_num = ?, is_iframe = ?, status = ?
+       SET parent_id = ?, menu_name = ?, menu_type = ?, path = ?, component = ?, perms = ?, icon = ?, order_num = ?, is_iframe = ?, is_full_screen = ?, status = ?
        WHERE menu_id = ? AND is_deleted = 0`,
-      [parentId, menuName, menuType, path || "", component || "", perms || null, icon || "", orderNum, isIframe, status, id],
+      [parentId, menuName, menuType, path || "", component || "", perms || null, icon || "", orderNum, isIframe, isFullScreen, status, id],
       (err, data) => {
         if (err) return reject(err);
         resolve(data);

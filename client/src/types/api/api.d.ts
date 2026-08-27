@@ -150,6 +150,8 @@ declare namespace Api {
       orderNum: number
       /** 是否 iframe 嵌入：0-否，1-是 */
       isIframe: number
+      /** 是否全屏展示：0-否，1-是（打开时隐藏侧边栏/顶栏/Tab，仅菜单类型有效） */
+      isFullScreen: number
       /** 状态：0-正常，1-停用 */
       status: number
       createTime: string

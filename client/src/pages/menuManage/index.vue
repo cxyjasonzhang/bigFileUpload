@@ -47,6 +47,14 @@
           </ElTag>
         </template>
 
+        <!-- 全屏列 -->
+        <template #isFullScreen="{ row }">
+          <ElTag v-if="row.menuType === 1" :type="row.isFullScreen === 1 ? 'primary' : 'info'" disable-transitions>
+            {{ row.isFullScreen === 1 ? '全屏' : '否' }}
+          </ElTag>
+          <span v-else>-</span>
+        </template>
+
         <!-- 状态列 -->
         <template #status="{ row }">
           <ElTag :type="row.status === 0 ? 'success' : 'danger'" disable-transitions>
@@ -302,7 +310,13 @@
     {
       prop: 'icon',
       label: '图标',
-      width: 110
+      width: 130
+    },
+    {
+      prop: 'isFullScreen',
+      label: '全屏',
+      width: 90,
+      useSlot: true
     },
     {
       prop: 'orderNum',

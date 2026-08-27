@@ -200,6 +200,7 @@ export interface MenuItemPayload {
   icon?: string;
   orderNum?: number;
   isIframe?: number;
+  isFullScreen?: number;
   status?: number;
 }
 

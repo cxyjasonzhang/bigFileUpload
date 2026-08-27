@@ -19,6 +19,8 @@ export interface MenuItem {
   orderNum?: number;
   /** 是否 iframe 嵌入 */
   isIframe?: number;
+  /** 是否全屏展示：打开时隐藏侧边栏/顶栏/Tab（仅菜单类型有效） */
+  isFullScreen?: number;
   /** 状态：0-正常 1-停用 */
   status?: number;
   children?: MenuItem[];
