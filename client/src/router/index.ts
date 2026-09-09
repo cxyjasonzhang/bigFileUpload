@@ -34,6 +34,12 @@ const routes: RouteRecordRaw[] = [
     meta: { public: true, title: "登录" },
   },
   {
+    path: "/testcss",
+    name: "testcss1",
+    component: () => import("@/pages/testTailWindCSS/cssPage1.vue"),
+    meta: { public: true, title: "测试css" },
+  },
+  {
     path: "/",
     name: "Layout",
     component: Layout,

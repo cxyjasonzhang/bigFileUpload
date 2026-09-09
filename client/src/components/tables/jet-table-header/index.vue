@@ -12,7 +12,7 @@
         @click="search"
         :class="showSearchBar ? 'active !bg-theme hover:!bg-theme/80' : ''"
       >
-        <ArtSvgIcon icon="ri:search-line" :class="showSearchBar ? 'text-white' : 'text-g-700'" />
+        <SvgIcon name="sys/search" :size="16" :class="showSearchBar ? 'text-white' : 'text-g-700'" />
       </div>
       <div
         v-if="shouldShow('refresh')"
@@ -76,10 +76,7 @@
                   class="drag-icon mr-2 h-4.5 flex-cc text-g-500"
                   :class="item.fixed ? 'cursor-default text-g-300' : 'cursor-move'"
                 >
-                  <ArtSvgIcon
-                    :icon="item.fixed ? 'ri:unpin-line' : 'ri:drag-move-2-fill'"
-                    class="text-base"
-                  />
+                <SvgIcon :name="item.fixed ? 'sys/unpin-line' : 'sys/drag'" :size="16" class="text-base" />
                 </div>
                 <ElCheckbox
                   :model-value="getColumnVisibility(item)"

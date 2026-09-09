@@ -17,7 +17,8 @@
 
     <!-- 表格区域：树形菜单表格 -->
     <ElCard class="flex-1 art-table-card">
-      <JetTableHeader :loading="loading" layout="size,fullscreen" fullClass="art-table-card">
+      <JetTableHeader :loading="loading" layout="refresh,size,columns,fullscreen" fullClass="art-table-card"
+        v-model:columns="columnChecks">
         <template #left>
           <ElSpace wrap>
             <ElButton type="primary" @click="handleAdd" v-ripple>
@@ -35,7 +36,7 @@
         row-key="menuId"
         :tree-props="{ children: 'children' }"
         :data="filteredTree"
-        :columns="tableColumns"
+        :columns="columns"
         :loading="loading"
         :height="computedTableHeight"
         empty-height="360px"
@@ -103,6 +104,7 @@
   import { fetchGetMenuList, fetchDeleteMenu, fetchMoveMenu } from '@/utils/api'
   import type { MenuItem } from '@/types/system/menu'
   import MenuEditDialog from './modules/menu-edit-dialog.vue'
+  import { useTableColumns } from '@/hooks/core/useTableColumns'
 
   type MenuListItem = MenuItem
 
@@ -134,6 +136,58 @@
     menuName: '',
     status: ''
   })
+
+  const { columns, columnChecks } = useTableColumns(() => [
+    {
+      prop: 'menuName',
+      label: '菜单名称',
+      minWidth: 150
+    },
+    {
+      prop: 'menuType',
+      label: '类型',
+      width: 90
+    },
+    {
+      prop: 'path',
+      label: '路由地址',
+      minWidth: 180
+    },
+    {
+      prop: 'perms',
+      label: '权限标识',
+      minWidth: 180
+    },
+    {
+      prop: 'icon',
+      label: '图标',
+      minWidth: 120
+    },
+    {
+      prop: 'isFullScreen',
+      label: '全屏',
+      minWidth: 100,
+      useSlot: true
+    },
+    {
+      prop: 'orderNum',
+      label: '排序',
+      minWidth: 80
+    },
+    {
+      prop: 'status',
+      label: '状态',
+      width: 100,
+      useSlot: true
+    },
+    {
+      prop: 'operation',
+      label: '操作',
+      minWidth: 150,
+      useSlot: true,
+      fixed: 'right'
+    }
+  ])
 
   // 搜索表单配置
   const searchItems = computed(() => [

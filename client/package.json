@@ -19,6 +19,7 @@
     "@vueuse/core": "^14.0.0",
     "axios": "^1.7.9",
     "element-plus": "^2.9.1",
+    "highlight.js": "^11.10.0",
     "idb": "^8.0.3",
     "ohash": "^2.0.11",
     "pinia": "^4.0.1",

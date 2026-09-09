@@ -110,6 +110,14 @@ function extractPagination(
 
 /**
  * 默认响应适配器 - 支持多种常见的API响应格式
+ *
+ * 支持的格式：
+ * 1. 直接数组: [item1, item2, ...]
+ * 2. 标准对象: { records: [], total: 100 }
+ * 3. 嵌套data: { data: { list: [], total: 100 } }
+ * 4. 服务端标准响应（含 code 字段）:
+ *    - 直接响应:  { code, msg, data: { list: [], page, pageSize, total } }
+ *    - axios 响应: { data: { code, msg, data: { list: [], ... } }, status, ... }
  */
 export const defaultResponseAdapter = <T>(response: unknown): ApiResponse<T> => {
   // 定义支持的字段
@@ -138,6 +146,33 @@ export const defaultResponseAdapter = <T>(response: unknown): ApiResponse<T> => 
   let total = 0
   let pagination: Pick<ApiResponse<unknown>, 'current' | 'size'> | undefined
 
+  // ─── 服务端标准响应解包 ───
+  // 场景一：axios 响应，data 是 { code, msg, data }
+  // 场景二：直接 { code, msg, data }
+  const serverPayload = (() => {
+    if (typeof res.data === 'object' && res.data && 'code' in (res.data as object)) {
+      return res.data as Record<string, unknown>
+    }
+    if ('code' in res) {
+      return res
+    }
+    return null
+  })()
+
+  if (serverPayload) {
+    // 从服务端响应的 data 字段解出列表与分页
+    const inner = serverPayload.data as Record<string, unknown> | undefined
+    if (inner && typeof inner === 'object') {
+      records = extractRecords(inner, ['list', 'records', 'items'])
+      total = extractTotal(inner, records, tableConfig.totalFields)
+      pagination = extractPagination(inner)
+    }
+    const result: ApiResponse<T> = { records, total }
+    if (pagination) Object.assign(result, pagination)
+    return result
+  }
+
+  // ─── 非服务端标准格式（原有逻辑）───
   // 处理标准格式或直接列表
   records = extractRecords(res, recordFields)
   total = extractTotal(res, records, tableConfig.totalFields)

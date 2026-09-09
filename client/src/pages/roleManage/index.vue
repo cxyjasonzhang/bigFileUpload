@@ -201,19 +201,14 @@ const {
   // 核心配置
   core: {
     apiFn: (params) => {
-      // 调用后端接口获取角色列表
+      // 调用后端接口获取角色列表（响应拆壳由 defaultResponseAdapter 统一处理）
       return fetchGetRoleList({
         roleName: params.roleName || undefined,
         roleCode: params.roleCode || undefined,
         enabled: params.enabled === '' ? undefined : Number(params.enabled),
         page: params.current,
         pageSize: params.size,
-      }).then((res) => ({
-        records: res.data.data.list,
-        current: res.data.data.page,
-        size: res.data.data.pageSize,
-        total: res.data.data.total,
-      }));
+      });
     },
     apiParams: {
       current: 1,

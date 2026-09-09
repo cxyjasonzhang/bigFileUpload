@@ -19,6 +19,7 @@ import { createPinia } from "pinia";
 import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 import { setupAuth, initAuth } from "./utils/auth";
 import { setupPermission } from "./utils/permission";
+import { setupGlobDirectives } from './directives'
 
 // 注册认证拦截器（401 自动刷新、自动附加 Authorization 头）
 setupAuth();
@@ -32,6 +33,8 @@ setupPermission(app);
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedstate);
 app.use(pinia);
+
+setupGlobDirectives(app)
 
 // 全局注册所有 Element Plus 图标，供菜单/按钮通过 <component :is="iconName"> 动态渲染
 // （图标保持全量注册，不随组件按需导入，见 ADR-0001）

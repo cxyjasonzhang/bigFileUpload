@@ -223,7 +223,8 @@ function useTableImpl<TApiFn extends (params: any) => Promise<any>>(
   const { width } = useWindowSize()
   const mobilePagination = computed(() => ({
     ...pagination,
-    small: width.value < 768
+    // small: width.value < 768
+    size: width.value < 768 ? 'small' : 'default'
   }))
 
   // 列配置
