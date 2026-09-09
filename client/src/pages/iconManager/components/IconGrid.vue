@@ -45,16 +45,17 @@
       <p>加载中...</p>
     </div>
 
-    <!-- 分页 -->
-    <div v-if="total > pageSize" class="pagination">
+    <!-- 分页：支持切换每页条数 -->
+    <div v-if="total > minPageSize" class="pagination">
       <el-pagination
         :current-page="page"
         :page-size="pageSize"
+        :page-sizes="pageSizeOptions"
         :total="total"
-        layout="prev, pager, next, total"
+        layout="total, prev, pager, next, sizes"
         background
-        small
         @current-change="$emit('page-change', $event)"
+        @size-change="$emit('size-change', $event)"
       />
     </div>
   </div>
@@ -72,9 +73,15 @@ const props = defineProps<{
   total: number
 }>()
 
+// 可选每页条数
+const pageSizeOptions = [10, 20, 50]
+// 最小分页容量：数据超过它才显示分页栏（保证可切换到更大的每页条数）
+const minPageSize = Math.min(...pageSizeOptions)
+
 const emit = defineEmits<{
   (e: 'search', val: string): void
   (e: 'page-change', val: number): void
+  (e: 'size-change', val: number): void
   (e: 'import'): void
   (e: 'edit', mode: string, icon: any): void
   (e: 'delete', icon: any): void

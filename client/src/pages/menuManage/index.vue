@@ -17,8 +17,13 @@
 
     <!-- 表格区域：树形菜单表格 -->
     <ElCard class="flex-1 art-table-card">
-      <JetTableHeader :loading="loading" layout="refresh,size,columns,fullscreen" fullClass="art-table-card"
-        v-model:columns="columnChecks">
+      <JetTableHeader
+        :loading="loading" 
+        layout="refresh,size,columns,fullscreen,settings" 
+        fullClass="art-table-card"
+        v-model:columns="columnChecks"
+        @refresh="handleRefresh"
+      >
         <template #left>
           <ElSpace wrap>
             <ElButton type="primary" @click="handleAdd" v-ripple>
@@ -65,17 +70,6 @@
 
         <!-- 操作列 -->
         <template #operation="{ row }">
-          <!-- <ElButton link type="primary" :disabled="row._siblingIndex === 0" @click="handleMove(row, 'up')">
-            上移
-          </ElButton>
-          <ElButton
-            link
-            type="primary"
-            :disabled="row._siblingIndex === row._siblingCount - 1"
-            @click="handleMove(row, 'down')"
-          >
-            下移
-          </ElButton> -->
           <!-- 新增下级（按钮类型不允许有子级，不显示） -->
           <JetButtonTable v-if="row.menuType !== 2" type="add" title="新增下级" @click="handleAddChild(row)" />
           <JetButtonTable type="edit" :row="row" @click="handleEdit(row)" />
@@ -241,6 +235,13 @@
     } finally {
       loading.value = false
     }
+  }
+
+  /**
+   * 刷新菜单列表
+   */
+  const handleRefresh = () => {
+    getData()
   }
 
   /**
@@ -444,21 +445,6 @@
         ElMessage.error(error.response.data.msg)
       } else {
         ElMessage.info('已取消删除')
-      }
-    }
-  }
-
-  /**
-   * 上移/下移（与同级兄弟交换排序号）
-   */
-  const handleMove = async (row: MenuTreeNode, direction: 'up' | 'down') => {
-    try {
-      await fetchMoveMenu(row.menuId, direction)
-      ElMessage.success(direction === 'up' ? '上移成功' : '下移成功')
-      getData()
-    } catch (error: any) {
-      if (error?.response?.data?.msg) {
-        ElMessage.error(error.response.data.msg)
       }
     }
   }

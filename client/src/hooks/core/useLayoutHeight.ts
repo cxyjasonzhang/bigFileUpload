@@ -17,6 +17,9 @@
  */
 
 import { ref, computed, watch, onMounted } from 'vue'
+/**
+ * useElementSize: 获取 HTML 元素的响应式尺寸
+ */
 import { useElementSize } from '@vueuse/core'
 
 /**

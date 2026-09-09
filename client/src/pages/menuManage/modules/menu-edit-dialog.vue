@@ -10,7 +10,8 @@
     <!-- validate-on-rule-change=false：切换菜单类型更新 rules 时不触发即时校验，只在提交/失焦时校验 -->
     <ElForm ref="formRef" :model="form" :rules="rules" label-width="90px" :validate-on-rule-change="false">
       <ElFormItem label="菜单类型">
-        <ElRadioGroup v-model="form.menuType">
+        <!-- 编辑模式下禁止切换菜单类型：切换会破坏已关联的路由/权限及子菜单结构 -->
+        <ElRadioGroup v-model="form.menuType" :disabled="dialogType === 'edit'">
           <ElRadioButton :value="0">目录</ElRadioButton>
           <ElRadioButton :value="1">菜单</ElRadioButton>
           <ElRadioButton :value="2">按钮</ElRadioButton>

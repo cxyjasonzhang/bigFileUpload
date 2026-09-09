@@ -72,10 +72,18 @@ router.beforeEach((to) => {
   const isPublic = Boolean(to.meta.public);
   // 已登录还想去 /login → 直接进工作台
   if (to.path === "/login" && authState.isLoggedIn) {
+    console.warn("[DEBUG-logout] 守卫拦截：已登录访问 /login → 弹回 workbench", {
+      from: router.currentRoute.value.fullPath,
+      to: to.fullPath,
+    });
     return { path: "/workbench" };
   }
   if (!isPublic && !authState.isLoggedIn) {
+    console.log("[DEBUG-logout] 守卫放行到登录页：未登录访问受保护路由", to.fullPath);
     return { path: "/login", query: { redirect: to.fullPath } };
+  }
+  if (to.path === "/login") {
+    console.log("[DEBUG-logout] 守卫放行：访问 /login（isLoggedIn = false）");
   }
   return true;
 });

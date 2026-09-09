@@ -20,7 +20,7 @@
         @click="refresh"
         :class="{ loading: loading && isManualRefresh }"
       >
-        <SvgIcon name="sys/refresh" :size="16" />
+        <SvgIcon name="sys/refresh" :size="16" :class="loading && isManualRefresh ? 'animate-spin text-g-600' : ''" />
       </div>
 
       <ElDropdown v-if="shouldShow('size')" @command="handleTableSizeChange">
@@ -47,14 +47,14 @@
       </ElDropdown>
 
       <div v-if="shouldShow('fullscreen')" class="button" @click="toggleFullScreen">
-        <SvgIcon :name="isFullScreen ? 'ai/reduce' : 'ai/expand'" :size="12" />
+        <SvgIcon :name="isFullScreen ? 'ai/reduce' : 'ai/expand'" :size="16" />
       </div>
 
       <!-- 列设置 -->
       <ElPopover v-if="shouldShow('columns')" placement="bottom" trigger="click">
         <template #reference>
           <div class="button">
-            <SvgIcon name="sys/arrange" :size="12" />
+            <SvgIcon name="sys/arrange" :size="16" />
           </div>
         </template>
         <div>
@@ -96,7 +96,7 @@
       <ElPopover v-if="shouldShow('settings')" placement="bottom" trigger="click">
         <template #reference>
           <div class="button">
-            <SvgIcon name="sys/arrange" :size="12" />
+            <SvgIcon name="sys/upDown" :size="16" class="text-base" />
           </div>
         </template>
         <div>

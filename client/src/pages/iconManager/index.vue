@@ -22,6 +22,7 @@
         :total="total"
         @search="handleSearch"
         @page-change="handlePageChange"
+        @size-change="handleSizeChange"
         @import="openIconDialog"
         @edit="openIconDialog"
         @delete="handleDeleteIcon"
@@ -69,7 +70,8 @@ const groups = ref<any[]>([])
 const icons = ref<any[]>([])
 const loading = ref(false)
 const page = ref(1)
-const pageSize = ref(24)
+// 默认每页条数（需与 IconGrid 的可选项 10/20/50 保持一致）
+const pageSize = ref(20)
 const total = ref(0)
 const activeGroupId = ref(null)
 const keyword = ref('')
@@ -183,6 +185,13 @@ function handleSearch(val) {
 
 function handlePageChange(p) {
   page.value = p
+  loadIcons()
+}
+
+// 切换每页条数：回到第一页并重新加载
+function handleSizeChange(size: number) {
+  pageSize.value = size
+  page.value = 1
   loadIcons()
 }
 

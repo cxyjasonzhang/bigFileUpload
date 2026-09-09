@@ -8,17 +8,18 @@
         </el-icon>
       </el-button>
 
-      <!-- 全屏切换 -->
-      <el-button text @click="toggleFullscreen">
-        <el-icon size="18">
-          <component :is="isFullscreen ? Aim : FullScreen" />
-        </el-icon>
-      </el-button>
+
     </div>
 
     <div class="header-right">
+        <!-- 全屏切换 -->
+      <el-button text @click="toggleFullscreen">
+        <el-icon size="18">
+          <SvgIcon :name="isFullscreen ? 'ai/reduce' : 'ai/expand'" :size="16" />
+        </el-icon>
+      </el-button>
       <!-- 主题配置入口 -->
-      <el-button text @click="drawerVisible = true" title="主题设置">
+      <el-button text @click="drawerVisible = true" title="主题设置" style="margin-left: 0;">
         <el-icon size="20">
           <Setting />
         </el-icon>
@@ -54,6 +55,7 @@ import {
   ArrowDown,
   Setting,
 } from "@element-plus/icons-vue";
+// import SvgIcon from "../SvgIcon.vue";
 // ElMessage 由 unplugin-auto-import 自动导入
 import { authState, logout } from "@/utils/auth";
 import { useLayoutStore } from "@/stores/layout";
@@ -91,15 +93,21 @@ function toggleFullscreen() {
 async function handleCommand(cmd: string) {
   if (cmd === "logout") {
     await logout();
+    console.log("[DEBUG-logout] handleCommand：logout() 已返回，当前 isLoggedIn =", authState.isLoggedIn);
     ElMessage.success("已退出登录");
-    router.push("/login");
+    try {
+      await router.push("/login");
+      console.log("[DEBUG-logout] push('/login') 已结束，当前路由 =", router.currentRoute.value.fullPath);
+    } catch (navErr) {
+      console.warn("[DEBUG-logout] push('/login') 被中断/失败:", navErr);
+    }
   } else if (cmd === "profile") {
     ElMessage.info("个人信息功能开发中");
   }
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .app-header {
   height: 56px;
   flex-shrink: 0;
@@ -109,6 +117,10 @@ async function handleCommand(cmd: string) {
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
+
+  :deep(.el-button) {
+    padding: 8px 8px;
+  }
 }
 
 .header-left {
@@ -130,5 +142,6 @@ async function handleCommand(cmd: string) {
   cursor: pointer;
   color: var(--app-text-primary);
   font-size: 14px;
+  padding-left: 5px;
 }
 </style>

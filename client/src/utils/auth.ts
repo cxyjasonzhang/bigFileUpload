@@ -61,6 +61,7 @@ export async function login(
   setAccessToken(res.data.access_token);
   authState.user = res.data.user;
   authState.isLoggedIn = true;
+  console.log("[DEBUG-logout] login() 完成：isLoggedIn 已置 true，user =", authState.user?.username);
 
   // 登录成功后拉取动态菜单与权限（失败不阻断登录跳转）
   try {
@@ -152,17 +153,21 @@ export async function refreshAccessToken(): Promise<string> {
 
 /** 登出 */
 export async function logout(): Promise<void> {
+  console.log("[DEBUG-logout] logout() 进入，当前 isLoggedIn =", authState.isLoggedIn);
   try {
     await request.post("/auth/logout");
-  } catch {
-    /* 忽略网络错误 */
+    console.log("[DEBUG-logout] logout 接口已返回 200");
+  } catch (err) {
+    console.warn("[DEBUG-logout] logout 接口异常（将被忽略）:", err);
   }
   clearAccessToken();
   authState.user = null;
   authState.isLoggedIn = false;
+  console.log("[DEBUG-logout] logout() 本地状态已清理：isLoggedIn = false");
   // 清空权限状态
   const { usePermissionStore } = await import("@/stores/permission");
   usePermissionStore().reset();
+  console.log("[DEBUG-logout] logout() 权限 store 已 reset，函数即将返回");
 }
 
 /**
@@ -181,6 +186,7 @@ export async function initAuth(): Promise<boolean> {
     if (res.code === 0 && res.data.user) {
       authState.user = res.data.user;
       authState.isLoggedIn = true;
+      console.log("[DEBUG-logout] initAuth() 恢复成功：isLoggedIn 已置 true，user =", authState.user?.username);
       // 恢复登录态后拉取动态菜单与权限（失败不阻断恢复）
       try {
         await loadDynamicAccess();
@@ -204,6 +210,7 @@ export function setupAuth(): void {
     getToken: getAccessToken,
     doRefresh: refreshAccessToken,
     onAuthFailed: () => {
+      console.warn("[DEBUG-logout] 拦截器 onAuthFailed 触发（refresh 失败）：本地状态将被清理");
       clearAccessToken();
       authState.user = null;
       authState.isLoggedIn = false;
