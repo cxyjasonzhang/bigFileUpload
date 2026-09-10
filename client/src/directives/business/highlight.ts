@@ -169,7 +169,7 @@ function retryProcessing(el: HTMLElement, maxRetries: number = 3, delay: number 
 
     // 检查是否还有未处理的代码块
     const remainingBlocks = Array.from(el.querySelectorAll<HTMLElement>('pre code')).filter(
-      (block) => !isBlockProcessed(block)
+      (block) => !isBlockProcessed(block),
     )
 
     if (remainingBlocks.length > 0 && retryCount < maxRetries) {
@@ -221,7 +221,7 @@ const highlightDirective: HighlightDirective = {
     // 开始观察
     observer.observe(el, {
       childList: true,
-      subtree: true
+      subtree: true,
     })
 
     // 将 observer 存储到元素上，以便在 unmounted 时清理
@@ -242,7 +242,7 @@ const highlightDirective: HighlightDirective = {
       observer.disconnect()
       delete (el as any)._highlightObserver
     }
-  }
+  },
 }
 
 export function setupHighlightDirective(app: App) {

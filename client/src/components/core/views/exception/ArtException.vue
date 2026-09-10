@@ -4,7 +4,7 @@
       <ThemeSvg :src="data.imgUrl" size="100%" class="!w-100" />
       <div class="ml-15 w-75 max-md:mx-auto max-md:mt-10 max-md:w-full max-md:text-center">
         <p class="text-xl leading-7 text-g-600 max-md:text-lg">{{ data.desc }}</p>
-        <ElButton type="primary" size="large" @click="backHome" class="mt-5">{{
+        <ElButton type="primary" size="large" class="mt-5" @click="backHome">{{
           data.btnText
         }}</ElButton>
       </div>
@@ -13,43 +13,43 @@
 </template>
 
 <script setup lang="ts">
-  import { useCommon } from '@/hooks/core/useCommon'
-  // import { useUserStore } from '@/store/modules/user'
+import { useCommon } from '@/hooks/core/useCommon'
+// import { useUserStore } from '@/store/modules/user'
 
-  const router = useRouter()
-  // const userStore = useUserStore()
+const router = useRouter()
+// const userStore = useUserStore()
 
-  interface ExceptionData {
-    /** 标题 */
-    title: string
-    /** 描述 */
-    desc: string
-    /** 按钮文本 */
-    btnText: string
-    /** 图片地址 */
-    imgUrl: string
-  }
+interface ExceptionData {
+  /** 标题 */
+  title: string
+  /** 描述 */
+  desc: string
+  /** 按钮文本 */
+  btnText: string
+  /** 图片地址 */
+  imgUrl: string
+}
 
-  withDefaults(
-    defineProps<{
-      data: ExceptionData
-    }>(),
-    {}
-  )
+withDefaults(
+  defineProps<{
+    data: ExceptionData
+  }>(),
+  {},
+)
 
-  const { homePath } = useCommon()
+const { homePath } = useCommon()
 
-  const backHome = () => {
-    const targetHomePath = homePath.value || '/'
+const backHome = () => {
+  const targetHomePath = homePath.value || '/'
 
-    // if (!userStore.isLogin) {
-      router.push({
-        name: 'Login',
-        query: { redirect: targetHomePath }
-      })
-    //   return
-    // }
+  // if (!userStore.isLogin) {
+  router.push({
+    name: 'Login',
+    query: { redirect: targetHomePath },
+  })
+  //   return
+  // }
 
-    // router.push('/')
-  }
+  // router.push('/')
+}
 </script>

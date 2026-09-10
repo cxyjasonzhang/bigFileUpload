@@ -1,12 +1,6 @@
 <template>
   <!-- 主题配置右侧抽屉 -->
-  <el-drawer
-    v-model="visible"
-    title="主题设置"
-    direction="rtl"
-    size="320px"
-    :z-index="2500"
-  >
+  <el-drawer v-model="visible" title="主题设置" direction="rtl" size="320px" :z-index="2500">
     <!-- 主题风格：浅色 / 暗色 -->
     <div class="config-section">
       <h4 class="config-label">主题风格</h4>
@@ -54,14 +48,14 @@
 </template>
 
 <script setup lang="ts">
-import { Sunny, Moon, Check } from "@element-plus/icons-vue";
-import { useLayoutStore } from "@/stores/layout";
-import { THEME_COLORS } from "@/utils/color";
+import { Sunny, Moon, Check } from '@element-plus/icons-vue'
+import { useLayoutStore } from '@/stores/layout'
+import { THEME_COLORS } from '@/utils/color'
 
-const layout = useLayoutStore();
+const layout = useLayoutStore()
 
 /** 抽屉可见性由父组件控制 */
-const visible = defineModel<boolean>({ required: true });
+const visible = defineModel<boolean>({ required: true })
 </script>
 
 <style scoped>
@@ -100,7 +94,9 @@ const visible = defineModel<boolean>({ required: true });
   align-items: center;
   justify-content: center;
   border: 2px solid transparent;
-  transition: transform 0.15s, border-color 0.15s;
+  transition:
+    transform 0.15s,
+    border-color 0.15s;
 }
 
 .color-item:hover {

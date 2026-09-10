@@ -1,0 +1,32 @@
+{
+  "name": "big-file-upload",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">20"
+  },
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "prepare": "husky",
+    "lint": "npm run lint --workspace client",
+    "lint:fix": "npm run lint:fix --workspace client",
+    "format": "npm run format --workspace client",
+    "format:check": "npm run format:check --workspace client"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.3.0"
+  },
+  "lint-staged": {
+    "client/**/*.{ts,vue,js}": [
+      "eslint --fix --config client/eslint.config.js",
+      "prettier --write --config client/.prettierrc.json --ignore-path client/.prettierignore"
+    ],
+    "client/**/*.{json,scss,css,md,html}": [
+      "prettier --write --config client/.prettierrc.json --ignore-path client/.prettierignore"
+    ]
+  }
+}

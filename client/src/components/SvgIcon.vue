@@ -1,10 +1,5 @@
 <template>
-  <span
-    class="svg-icon"
-    :style="iconStyle"
-    v-html="svgContent"
-    v-show="svgContent"
-  />
+  <span v-show="svgContent" class="svg-icon" :style="iconStyle" v-html="svgContent" />
 </template>
 
 <script setup lang="ts">
@@ -19,11 +14,11 @@ defineOptions({ name: 'SvgIcon' })
 const props = withDefaults(
   defineProps<{
     /** 图标引用名，格式：分组slug/图标名 */
-    name: string;
+    name: string
     /** 图标尺寸，数字默认px，也可传字符串如 '1.5em' */
-    size?: number | string;
+    size?: number | string
     /** 图标填充色 */
-    color?: string;
+    color?: string
   }>(),
   {
     size: 24,

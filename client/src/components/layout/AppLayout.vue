@@ -5,7 +5,7 @@
     <div class="layout-content layout-content--fullscreen" style="--art-full-height: 100%">
       <router-view v-if="isRefresh" v-slot="{ Component, route }">
         <keep-alive :include="visitedComponentNames">
-          <component class="art-page-view" :is="Component" :key="route.path" />
+          <component :is="Component" :key="route.path" class="art-page-view" />
         </keep-alive>
       </router-view>
     </div>
@@ -28,7 +28,7 @@
              v-if="isRefresh" 配合 refreshKey 实现 Tab 右键刷新：短暂销毁再重建，组件重新挂载 -->
         <router-view v-if="isRefresh" v-slot="{ Component, route }" :style="contentStyle">
           <keep-alive :include="visitedComponentNames">
-            <component class="art-page-view" :is="Component" :key="route.path" />
+            <component :is="Component" :key="route.path" class="art-page-view" />
           </keep-alive>
         </router-view>
       </div>
@@ -38,51 +38,47 @@
 
 <script setup lang="ts">
 import type { CSSProperties } from 'vue'
-import { ref, computed, watch, nextTick, onMounted } from "vue";
-import { useRoute } from "vue-router";
-import AppSidebar from "./AppSidebar.vue";
-import AppHeader from "./AppHeader.vue";
-import AppTabs from "./AppTabs.vue";
-import { useLayoutStore } from "@/stores/layout";
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import AppSidebar from './AppSidebar.vue'
+import AppHeader from './AppHeader.vue'
+import AppTabs from './AppTabs.vue'
+import { useLayoutStore } from '@/stores/layout'
 import { useAutoLayoutHeight } from '@/hooks/core/useLayoutHeight'
 
-const route = useRoute();
-const layout = useLayoutStore();
+const route = useRoute()
+const layout = useLayoutStore()
 
 const { containerMinHeight, headerRef, contentHeaderRef } = useAutoLayoutHeight()
 
-const contentStyle = computed(
-    (): CSSProperties => ({
-      minHeight: containerMinHeight.value
-    })
-  )
+const contentStyle = computed((): CSSProperties => ({
+  minHeight: containerMinHeight.value,
+}))
 
 // 当前路由是否全屏展示（来自动态路由 meta.isFullScreen）
-const isFullScreen = computed(() => Boolean(route.meta.isFullScreen));
+const isFullScreen = computed(() => Boolean(route.meta.isFullScreen))
 
 // keep-alive 的 :include 仅接收「已访问列表」内的组件名，
 // 关闭 Tab（从列表移除）后对应组件自动从缓存驱逐
-const visitedComponentNames = computed(() =>
-  layout.visitedRoutes.map((v) => v.component),
-);
+const visitedComponentNames = computed(() => layout.visitedRoutes.map((v) => v.component))
 
 // Tab 刷新机制：watch refreshKey，短暂 v-if=false 再恢复，销毁再重建 router-view
-const isRefresh = ref(true);
+const isRefresh = ref(true)
 
 watch(
   () => layout.refreshKey,
   () => {
-    isRefresh.value = false;
+    isRefresh.value = false
     nextTick(() => {
-      isRefresh.value = true;
-    });
+      isRefresh.value = true
+    })
   },
-);
+)
 
 // 初始化布局：注册窄屏自动收起侧栏的监听（决策 10）
 onMounted(() => {
-  layout.initLayout();
-});
+  layout.initLayout()
+})
 
 // 全屏 ↔ 普通切换时，useAutoLayoutHeight 通过 getElementById 缓存的 headerRef 会指向
 // 已销毁的旧 #app-header 节点，导致 --art-full-height 高度计算错误（普通页面残留滚动条）。
@@ -90,13 +86,13 @@ onMounted(() => {
 watch(
   () => isFullScreen.value,
   (fs) => {
-    if (fs) return;
+    if (fs) return
     requestAnimationFrame(() => {
-      headerRef.value = document.getElementById("app-header") ?? undefined;
-      contentHeaderRef.value = document.getElementById("app-content-header") ?? undefined;
-    });
+      headerRef.value = document.getElementById('app-header') ?? undefined
+      contentHeaderRef.value = document.getElementById('app-content-header') ?? undefined
+    })
   },
-);
+)
 </script>
 
 <style scoped>

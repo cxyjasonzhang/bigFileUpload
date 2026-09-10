@@ -1,10 +1,10 @@
-import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue";
-import { fileURLToPath } from "url";
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { fileURLToPath } from 'url'
 // Element Plus 按需导入（ADR-0001）
-import Components from "unplugin-vue-components/vite";
-import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
-import AutoImport from "unplugin-auto-import/vite";
+import Components from 'unplugin-vue-components/vite'
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import AutoImport from 'unplugin-auto-import/vite'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
@@ -16,11 +16,11 @@ export default defineConfig({
       resolvers: [
         ElementPlusResolver({
           // 自动按需导入组件样式（CSS）
-          importStyle: "css",
+          importStyle: 'css',
         }),
       ],
       // 自动生成 components.d.ts 类型声明
-      dts: "src/components.d.ts",
+      dts: 'src/components.d.ts',
     }),
     AutoImport({
       imports: ['vue', 'vue-router', 'pinia', '@vueuse/core'],
@@ -29,33 +29,33 @@ export default defineConfig({
       eslintrc: {
         enabled: true,
         filepath: './.auto-import.json',
-        globalsPropValue: true
-      }
+        globalsPropValue: true,
+      },
     }),
   ],
   resolve: {
     alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
-      "@stores": fileURLToPath(new URL("./src/stores", import.meta.url)),
-      "@styles": fileURLToPath(new URL("./src/styles", import.meta.url)),
-      '@imgs': fileURLToPath(new URL("./src/assets/images", import.meta.url)),
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@stores': fileURLToPath(new URL('./src/stores', import.meta.url)),
+      '@styles': fileURLToPath(new URL('./src/styles', import.meta.url)),
+      '@imgs': fileURLToPath(new URL('./src/assets/images', import.meta.url)),
     },
   },
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `@use "@/styles/core/el-light.scss" as *;`
-      }
-    }
+        additionalData: `@use "@/styles/core/el-light.scss" as *;`,
+      },
+    },
   },
   server: {
     port: 5173,
     proxy: {
-      "/api": {
-        target: "http://localhost:3001",
+      '/api': {
+        target: 'http://localhost:3001',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },
-});
+})

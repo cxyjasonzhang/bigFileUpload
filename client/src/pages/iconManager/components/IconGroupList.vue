@@ -91,7 +91,9 @@ function handleCommand(cmd, group) {
   font-size: 14px;
   color: var(--el-text-color-regular);
   border-left: 3px solid transparent;
-  transition: background-color 0.18s ease, color 0.18s ease;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
 
   &:hover {
     background: var(--el-fill-color-light);

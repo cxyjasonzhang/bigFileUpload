@@ -2,7 +2,7 @@
 import SpecialNode from './components/SpecialNode.vue'
 import SpecialEdge from './components/SpecialEdge.vue'
 import { ref } from 'vue'
-import type { Node, Edge } from '@vue-flow/core'  
+import type { Node, Edge } from '@vue-flow/core'
 import { VueFlow } from '@vue-flow/core'
 
 // these are our nodes
@@ -75,7 +75,7 @@ const edges = ref<Edge[]>([
     // all edges can have a data object containing any data you want to pass to the edge
     data: {
       hello: 'world',
-    }
+    },
   },
 ])
 </script>

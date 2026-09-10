@@ -134,6 +134,5 @@ declare namespace Api {
           endTime: string | null
         }
     >
-
   }
 }

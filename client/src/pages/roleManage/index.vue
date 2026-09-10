@@ -1,9 +1,19 @@
 <template>
   <div class="user-page art-full-height">
     <!-- 搜索区域 -->
-    <JetSearchBar ref="searchBarRef" v-model="searchFormState" :items="searchItems" :rules="rules" :is-expand="false"
-      :show-expand="true" :show-reset-button="true" :show-search-button="true" :disabled-search-button="false"
-      @search="handleSearch" @reset="handleReset" />
+    <JetSearchBar
+      ref="searchBarRef"
+      v-model="searchFormState"
+      :items="searchItems"
+      :rules="rules"
+      :is-expand="false"
+      :show-expand="true"
+      :show-reset-button="true"
+      :show-search-button="true"
+      :disabled-search-button="false"
+      @search="handleSearch"
+      @reset="handleReset"
+    />
 
     <!-- 表格区域 -->
     <ElCard class="flex-1 art-table-card">
@@ -20,19 +30,19 @@
 
       <!-- 表格工具栏 -->
       <!-- fullClass 属性用于设置全屏区域，如果需要设置全屏区域，请使用此属性 -->
-      <JetTableHeader :loading="loading" layout="size,fullscreen" fullClass="art-table-card">
+      <JetTableHeader :loading="loading" layout="size,fullscreen" full-class="art-table-card">
         <template #left>
           <ElSpace wrap>
-            <ElButton type="primary" @click="handleAdd" v-ripple>
+            <ElButton v-ripple type="primary" @click="handleAdd">
               <ElIcon>
                 <Plus />
               </ElIcon>
               新增角色
             </ElButton>
 
-            <ElButton @click="handleClearData" plain v-ripple> 清空数据 </ElButton>
+            <ElButton v-ripple plain @click="handleClearData"> 清空数据 </ElButton>
 
-            <ElButton @click="handleBatchDelete" :disabled="selectedRows.length === 0" v-ripple>
+            <ElButton v-ripple :disabled="selectedRows.length === 0" @click="handleBatchDelete">
               <ElIcon>
                 <Delete />
               </ElIcon>
@@ -42,10 +52,21 @@
         </template>
       </JetTableHeader>
 
-      <JetTable ref="tableRef" :loading="loading" :pagination="pagination" :data="(data as RoleListItem[])"
-        :columns="columns" :height="computedTableHeight" empty-height="360px" @selection-change="handleSelectionChange"
-        @row-click="handleRowClick" @header-click="handleHeaderClick" @sort-change="handleSortChange"
-        @pagination:size-change="handleSizeChange" @pagination:current-change="handleCurrentChange">
+      <JetTable
+        ref="tableRef"
+        :loading="loading"
+        :pagination="pagination"
+        :data="data as RoleListItem[]"
+        :columns="columns"
+        :height="computedTableHeight"
+        empty-height="360px"
+        @selection-change="handleSelectionChange"
+        @row-click="handleRowClick"
+        @header-click="handleHeaderClick"
+        @sort-change="handleSortChange"
+        @pagination:size-change="handleSizeChange"
+        @pagination:current-change="handleCurrentChange"
+      >
         <!-- 操作列 -->
         <template #operation="{ row }">
           <div class="flex">
@@ -55,9 +76,10 @@
             <JetButtonTable
               icon="sys/assign"
               :row="row"
-              buttonBgColor="rgba(136, 76, 255, 0.08)"
+              button-bg-color="rgba(136, 76, 255, 0.08)"
               icon-color="#884cff"
-              @click="handleAssign(row)" />
+              @click="handleAssign(row)"
+            />
             <JetButtonTable type="delete" :row="row" @click="handleDelete(row)" />
           </div>
         </template>
@@ -65,7 +87,12 @@
     </ElCard>
 
     <!-- 角色新增/编辑弹窗 -->
-    <RoleEditDialog v-model="dialogVisible" :dialog-type="dialogType" :role-data="currentRole" @success="getData" />
+    <RoleEditDialog
+      v-model="dialogVisible"
+      :dialog-type="dialogType"
+      :role-data="currentRole"
+      @success="getData"
+    />
 
     <!-- 角色查看弹窗 -->
     <RoleViewDialog v-model="viewDialogVisible" :role-data="viewRole" />
@@ -109,7 +136,7 @@ const searchBarRef = ref()
 const searchFormState = ref({
   roleName: '',
   roleCode: '',
-  enabled: ''
+  enabled: '',
 })
 
 // 搜索表单配置
@@ -120,16 +147,16 @@ const searchItems = computed(() => [
     label: '角色名称',
     type: 'input',
     props: {
-      placeholder: '请输入角色名称'
-    }
+      placeholder: '请输入角色名称',
+    },
   },
   {
     key: 'roleCode',
     label: '角色编码',
     type: 'input',
     props: {
-      placeholder: '请输入角色编码'
-    }
+      placeholder: '请输入角色编码',
+    },
   },
   {
     key: 'enabled',
@@ -138,15 +165,15 @@ const searchItems = computed(() => [
     options: [
       { label: '全部', value: '' },
       { label: '启用', value: '1' },
-      { label: '禁用', value: '0' }
-    ]
-  }
+      { label: '禁用', value: '0' },
+    ],
+  },
 ])
 
 // 校验规则
 const rules = {
   roleName: [{ required: false, message: '请输入角色名称', trigger: 'blur' }],
-  roleCode: [{ required: false, message: '请输入角色编码', trigger: 'blur' }]
+  roleCode: [{ required: false, message: '请输入角色编码', trigger: 'blur' }],
 }
 
 const handleSearch = async () => {
@@ -196,7 +223,7 @@ const {
   refreshRemove, // 删除后刷新：智能处理页码，避免空页面（适用于删除数据后）
 
   // 动态列配置方法
-  columns // 表格列配置
+  columns, // 表格列配置
 } = useTable({
   // 核心配置
   core: {
@@ -208,7 +235,7 @@ const {
         enabled: params.enabled === '' ? undefined : Number(params.enabled),
         page: params.current,
         pageSize: params.size,
-      });
+      })
     },
     apiParams: {
       current: 1,
@@ -223,40 +250,40 @@ const {
         prop: 'roleName',
         label: '角色名称',
         minWidth: 160,
-        sortable: true
+        sortable: true,
       },
       {
         prop: 'roleCode',
         label: '角色编码',
         minWidth: 140,
-        sortable: true
+        sortable: true,
       },
       {
         prop: 'description',
         label: '角色描述',
-        minWidth: 220
+        minWidth: 220,
       },
       {
         prop: 'enabled',
         label: '状态',
         width: 100,
         sortable: true,
-        formatter: (row: any) => row.enabled ? '启用' : '禁用'
+        formatter: (row: any) => (row.enabled ? '启用' : '禁用'),
       },
       {
         prop: 'createTime',
         label: '创建时间',
         minWidth: 180,
-        sortable: true
+        sortable: true,
       },
       {
         prop: 'operation',
         label: '操作',
         width: 190,
         useSlot: true,
-        fixed: 'right'
-      }
-    ]
+        fixed: 'right',
+      },
+    ],
   },
 
   // 数据处理
@@ -269,7 +296,7 @@ const {
     enableCache: true, // 开启缓存
     cacheTime: 5 * 60 * 1000, // 5分钟
     debounceTime: 300,
-    maxCacheSize: 100
+    maxCacheSize: 100,
   },
 
   // 生命周期钩子
@@ -280,14 +307,14 @@ const {
     onError: (error) => {
       console.error('❌ 数据加载失败:', error)
       ElMessage.error(error.message)
-    }
+    },
   },
 
   // 调试配置
   debug: {
     enableLog: true,
-    logLevel: 'info'
-  }
+    logLevel: 'info',
+  },
 })
 
 // 事件处理函数
@@ -369,7 +396,7 @@ const handleDelete = async (row: RoleListItem) => {
     await ElMessageBox.confirm(`确定要删除角色「${row.roleName}」吗？`, '警告', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
-      type: 'warning'
+      type: 'warning',
     })
 
     await fetchDeleteRole(row.roleId)
@@ -387,15 +414,11 @@ const handleDelete = async (row: RoleListItem) => {
 
 const handleBatchDelete = async () => {
   try {
-    await ElMessageBox.confirm(
-      `确定要删除选中的 ${selectedRows.value.length} 个角色吗？`,
-      '警告',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await ElMessageBox.confirm(`确定要删除选中的 ${selectedRows.value.length} 个角色吗？`, '警告', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
 
     // 循环调用删除接口逐条删除
     await Promise.all(selectedRows.value.map((row) => fetchDeleteRole(row.roleId)))

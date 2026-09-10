@@ -34,181 +34,176 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { useLayoutStore } from "@/stores/layout";
-import type { VisitedRoute } from "@/stores/layout";
-import JetMenuRight from "@/components/others/jet-menu-right/index.vue";
-import type { MenuItemType } from "@/components/others/jet-menu-right/index.vue";
+import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useLayoutStore } from '@/stores/layout'
+import type { VisitedRoute } from '@/stores/layout'
+import JetMenuRight from '@/components/others/jet-menu-right/index.vue'
+import type { MenuItemType } from '@/components/others/jet-menu-right/index.vue'
 
-const route = useRoute();
-const router = useRouter();
-const layout = useLayoutStore();
+const route = useRoute()
+const router = useRouter()
+const layout = useLayoutStore()
 
 /** JetMenuRight 组件引用 */
-const menuRef = ref<InstanceType<typeof JetMenuRight> | null>(null);
+const menuRef = ref<InstanceType<typeof JetMenuRight> | null>(null)
 
 /** 当前操作的 Tab（右键时记录右键目标，下拉时设为激活 Tab） */
-const currentRightClickTag = ref<VisitedRoute | null>(null);
+const currentRightClickTag = ref<VisitedRoute | null>(null)
 
 /** 处理 Tab 点击：切换到对应路由 */
 function handleTabClick(tag: VisitedRoute) {
   if (tag.path !== route.path) {
-    router.push(tag.path);
+    router.push(tag.path)
   }
 }
 
 /** 处理 Tab 关闭按钮 */
 function handleTabClose(tag: VisitedRoute) {
-  layout.removeVisited(tag.path);
+  layout.removeVisited(tag.path)
   if (tag.path === route.path) {
-    const idx = layout.visitedRoutes.findIndex((v: VisitedRoute) => v.path === tag.path);
+    const idx = layout.visitedRoutes.findIndex((v: VisitedRoute) => v.path === tag.path)
     if (idx === -1) {
-      const last = layout.visitedRoutes[layout.visitedRoutes.length - 1];
-      if (last) router.push(last.path);
+      const last = layout.visitedRoutes[layout.visitedRoutes.length - 1]
+      if (last) router.push(last.path)
     }
   }
 }
 
 /** 处理右键事件：记录当前 Tab 并显示菜单 */
 function handleContextMenu(e: MouseEvent, tag: VisitedRoute) {
-  currentRightClickTag.value = tag;
-  menuRef.value?.show(e);
+  currentRightClickTag.value = tag
+  menuRef.value?.show(e)
 }
 
 /** 处理下拉图标点击：以当前激活 Tab 为目标弹出菜单 */
 function handleDropdownClick(e: MouseEvent) {
-  const tag = layout.visitedRoutes.find((v: VisitedRoute) => v.path === route.path);
-  if (!tag) return;
-  currentRightClickTag.value = tag;
-  menuRef.value?.show(e);
+  const tag = layout.visitedRoutes.find((v: VisitedRoute) => v.path === route.path)
+  if (!tag) return
+  currentRightClickTag.value = tag
+  menuRef.value?.show(e)
 }
 
 /** 当前操作 Tab 是否已固定 */
-const isPinned = computed(() => currentRightClickTag.value?.pinned ?? false);
+const isPinned = computed(() => currentRightClickTag.value?.pinned ?? false)
 
 /** 当前操作 Tab 是否为当前激活页 */
-const isActive = computed(
-  () => currentRightClickTag.value?.path === route.path,
-);
+const isActive = computed(() => currentRightClickTag.value?.path === route.path)
 
 /** 当前操作 Tab 在 visitedRoutes 中的索引 */
 const tagIndex = computed(() => {
-  if (!currentRightClickTag.value) return -1;
+  if (!currentRightClickTag.value) return -1
   return layout.visitedRoutes.findIndex(
     (v: VisitedRoute) => v.path === currentRightClickTag.value!.path,
-  );
-});
+  )
+})
 
 /** 右侧是否有可关闭的 Tab */
 const hasClosableRight = computed(() => {
-  if (tagIndex.value === -1) return false;
-  return layout.visitedRoutes
-    .slice(tagIndex.value + 1)
-    .some((v: VisitedRoute) => !v.pinned);
-});
+  if (tagIndex.value === -1) return false
+  return layout.visitedRoutes.slice(tagIndex.value + 1).some((v: VisitedRoute) => !v.pinned)
+})
 
 /** 左侧是否有可关闭的 Tab */
 const hasClosableLeft = computed(() => {
-  if (tagIndex.value <= 0) return false;
-  return layout.visitedRoutes.slice(0, tagIndex.value).some((v: VisitedRoute) => !v.pinned);
-});
+  if (tagIndex.value <= 0) return false
+  return layout.visitedRoutes.slice(0, tagIndex.value).some((v: VisitedRoute) => !v.pinned)
+})
 
 /** 除当前 + pinned 外是否还有其他可关闭的 Tab */
 const hasOtherClosable = computed(() => {
-  if (!currentRightClickTag.value) return false;
+  if (!currentRightClickTag.value) return false
   return layout.visitedRoutes.some(
     (v: VisitedRoute) => !v.pinned && v.path !== currentRightClickTag.value!.path,
-  );
-});
+  )
+})
 
 /** 除 pinned 外是否有可关闭的 Tab */
-const hasAnyClosable = computed(() =>
-  layout.visitedRoutes.some((v: VisitedRoute) => !v.pinned),
-);
+const hasAnyClosable = computed(() => layout.visitedRoutes.some((v: VisitedRoute) => !v.pinned))
 
 /** 菜单项：根据 currentRightClickTag 状态动态生成（右键和下拉复用同一套） */
 const contextMenuItems = computed<MenuItemType[]>(() => [
   {
-    key: "refresh",
-    icon: "sys/refresh",
-    label: "刷新",
+    key: 'refresh',
+    icon: 'sys/refresh',
+    label: '刷新',
     disabled: !isActive.value,
   },
   {
-    key: "pin",
-    icon: "sys/fixed",
-    label: isPinned.value ? "取消固定" : "固定",
-    disabled: currentRightClickTag.value?.path === "/workbench",
+    key: 'pin',
+    icon: 'sys/fixed',
+    label: isPinned.value ? '取消固定' : '固定',
+    disabled: currentRightClickTag.value?.path === '/workbench',
   },
   {
-    key: "close-left",
-    icon: "sys/arrow_left",
-    label: "关闭左侧",
+    key: 'close-left',
+    icon: 'sys/arrow_left',
+    label: '关闭左侧',
     disabled: !hasClosableLeft.value,
   },
   {
-    key: "close-right",
-    icon: "sys/arrow_right",
-    label: "关闭右侧",
+    key: 'close-right',
+    icon: 'sys/arrow_right',
+    label: '关闭右侧',
     disabled: !hasClosableRight.value,
     showLine: true,
   },
   {
-    key: "close-others",
-    icon: "ai/关闭",
-    label: "关闭其他",
+    key: 'close-others',
+    icon: 'ai/关闭',
+    label: '关闭其他',
     disabled: !hasOtherClosable.value,
   },
   {
-    key: "close-all",
-    icon: "sys/close_border",
-    label: "关闭全部",
+    key: 'close-all',
+    icon: 'sys/close_border',
+    label: '关闭全部',
     disabled: !hasAnyClosable.value,
   },
-]);
+])
 
 /** 处理菜单项点击 */
 function handleMenuSelect(item: MenuItemType) {
-  const tag = currentRightClickTag.value;
-  if (!tag) return;
+  const tag = currentRightClickTag.value
+  if (!tag) return
 
   switch (item.key) {
-    case "refresh":
-      layout.triggerRefresh();
-      break;
+    case 'refresh':
+      layout.triggerRefresh()
+      break
 
-    case "pin":
+    case 'pin':
       if (tag.pinned) {
-        layout.unpinVisited(tag.path);
+        layout.unpinVisited(tag.path)
       } else {
-        layout.pinVisited(tag.path);
+        layout.pinVisited(tag.path)
       }
-      break;
+      break
 
-    case "close-left":
-      layout.closeLeftVisited(tag.path);
+    case 'close-left':
+      layout.closeLeftVisited(tag.path)
       if (!layout.visitedRoutes.some((v: VisitedRoute) => v.path === route.path)) {
-        router.push(tag.path);
+        router.push(tag.path)
       }
-      break;
+      break
 
-    case "close-right":
-      layout.closeRightVisited(tag.path);
-      break;
+    case 'close-right':
+      layout.closeRightVisited(tag.path)
+      break
 
-    case "close-others":
-      layout.closeOtherVisited(tag.path);
+    case 'close-others':
+      layout.closeOtherVisited(tag.path)
       if (!layout.visitedRoutes.some((v: VisitedRoute) => v.path === route.path)) {
-        router.push(tag.path);
+        router.push(tag.path)
       }
-      break;
+      break
 
-    case "close-all":
-      layout.closeAllVisited();
-      const first = layout.visitedRoutes[0];
-      if (first) router.push(first.path);
-      break;
+    case 'close-all': {
+      layout.closeAllVisited()
+      const first = layout.visitedRoutes[0]
+      if (first) router.push(first.path)
+      break
+    }
   }
 }
 </script>

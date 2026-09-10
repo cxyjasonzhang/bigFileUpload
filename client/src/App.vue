@@ -5,18 +5,18 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
-import zhCn from "element-plus/dist/locale/zh-cn.mjs";
-import { checkVersion as checkIconCacheVersion } from "@/utils/iconCache";
-import { useTheme } from "@/hooks/core/useTheme";
+import { onMounted } from 'vue'
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+import { checkVersion as checkIconCacheVersion } from '@/utils/iconCache'
+import { useTheme } from '@/hooks/core/useTheme'
 
 // 图标缓存版本比对：不一致则清空本地缓存（仅启动调用一次）
 onMounted(async () => {
-  await checkIconCacheVersion();
-});
+  await checkIconCacheVersion()
+})
 
 // 主题初始化：监听 mode/primaryColor 变化，自动切换 html.dark 并注入主题色 CSS 变量
-useTheme();
+useTheme()
 </script>
 
 <style>
@@ -33,7 +33,7 @@ body,
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--app-bg);
 }
 </style>

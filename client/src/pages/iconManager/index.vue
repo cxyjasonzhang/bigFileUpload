@@ -56,8 +56,13 @@ import { ref, onMounted } from 'vue'
 defineOptions({ name: 'IconManager' })
 // ElMessage、ElMessageBox 由 unplugin-auto-import 自动导入
 import {
-  getIconGroups, createIconGroup, updateIconGroup, deleteIconGroup,
-  getIcons, deleteIcon, batchDeleteIcons,
+  getIconGroups,
+  createIconGroup,
+  updateIconGroup,
+  deleteIconGroup,
+  getIcons,
+  deleteIcon,
+  batchDeleteIcons,
 } from '@/utils/api'
 import { invalidate, invalidateAll, refreshVersion } from '@/utils/iconCache'
 import IconGroupList from './components/IconGroupList.vue'
@@ -159,7 +164,7 @@ async function handleDeleteGroup(group) {
     await ElMessageBox.confirm(
       `确定要删除分组「${group.name}」及其下所有图标吗？此操作不可恢复。`,
       '删除确认',
-      { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' }
+      { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' },
     )
     await deleteIconGroup(group.id)
     ElMessage.success('分组已删除')
@@ -219,11 +224,11 @@ async function handleIconConfirm() {
 
 async function handleDeleteIcon(icon) {
   try {
-    await ElMessageBox.confirm(
-      `确定要删除图标「${icon.name}」吗？`,
-      '删除确认',
-      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
-    )
+    await ElMessageBox.confirm(`确定要删除图标「${icon.name}」吗？`, '删除确认', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
     await deleteIcon(icon.id)
     ElMessage.success('图标已删除')
     await invalidate(`${icon.groupSlug}/${icon.name}`)

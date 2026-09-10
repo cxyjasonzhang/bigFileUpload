@@ -10,13 +10,9 @@
       :on-change="handleFileChange"
     >
       <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-      <div class="el-upload__text">
-        拖拽文件到此处，或 <em>点击选择文件</em>
-      </div>
+      <div class="el-upload__text">拖拽文件到此处，或 <em>点击选择文件</em></div>
       <template #tip>
-        <div class="el-upload__tip">
-          支持多文件同时添加，自动排队上传、断点续传
-        </div>
+        <div class="el-upload__tip">支持多文件同时添加，自动排队上传、断点续传</div>
       </template>
     </el-upload>
 
@@ -74,9 +70,7 @@
             status="success"
             :show-text="false"
           />
-          <span class="task-progress-text"
-            >计算文件指纹 {{ task.hashProgress }}%</span
-          >
+          <span class="task-progress-text">计算文件指纹 {{ task.hashProgress }}%</span>
         </div>
 
         <!-- 上传进度 -->
@@ -103,42 +97,20 @@
             >
               开始
             </el-button>
-            <el-button
-              type="danger"
-              size="small"
-              text
-              @click="queue.removeTask(task.id)"
-            >
+            <el-button type="danger" size="small" text @click="queue.removeTask(task.id)">
               移除
             </el-button>
           </template>
 
           <!-- 上传中 -->
           <template v-if="task.status === TASK_STATUS.UPLOADING">
-            <el-button
-              type="warning"
-              size="small"
-              @click="handlePause(task.id)"
-            >
-              暂停
-            </el-button>
+            <el-button type="warning" size="small" @click="handlePause(task.id)"> 暂停 </el-button>
           </template>
 
           <!-- 已暂停 -->
           <template v-if="task.status === TASK_STATUS.PAUSED">
-            <el-button
-              type="primary"
-              size="small"
-              @click="handleResume(task.id)"
-            >
-              继续
-            </el-button>
-            <el-button
-              type="danger"
-              size="small"
-              text
-              @click="queue.cancelTask(task.id)"
-            >
+            <el-button type="primary" size="small" @click="handleResume(task.id)"> 继续 </el-button>
+            <el-button type="danger" size="small" text @click="queue.cancelTask(task.id)">
               取消
             </el-button>
           </template>
@@ -161,24 +133,14 @@
             >
               选择文件重试
             </el-button>
-            <el-button
-              type="danger"
-              size="small"
-              text
-              @click="queue.removeTask(task.id)"
-            >
+            <el-button type="danger" size="small" text @click="queue.removeTask(task.id)">
               移除
             </el-button>
           </template>
 
           <!-- 上传成功 -->
           <template v-if="task.status === TASK_STATUS.SUCCESS">
-            <el-button
-              type="danger"
-              size="small"
-              text
-              @click="queue.removeTask(task.id)"
-            >
+            <el-button type="danger" size="small" text @click="queue.removeTask(task.id)">
               移除
             </el-button>
           </template>
@@ -194,141 +156,132 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted } from 'vue'
 
-defineOptions({ name: "FileUpload" });
-import { UploadFilled } from "@element-plus/icons-vue";
+defineOptions({ name: 'FileUpload' })
+import { UploadFilled } from '@element-plus/icons-vue'
 // ElMessage 由 unplugin-auto-import 自动导入
-import { UploadQueue, TASK_STATUS } from "@/utils/uploadQueue";
+import { UploadQueue, TASK_STATUS } from '@/utils/uploadQueue'
 
-const queue = new UploadQueue();
-const uploadRef = ref<any>(null);
-const resumeFileInput = ref<any>(null);
-const pendingResumeTaskId = ref<string | null>(null);
+const queue = new UploadQueue()
+const uploadRef = ref<any>(null)
+const resumeFileInput = ref<any>(null)
+const pendingResumeTaskId = ref<string | null>(null)
 
-const hasSuccessTasks = computed(() =>
-  queue.tasks.some((t) => t.status === TASK_STATUS.SUCCESS),
-);
+const hasSuccessTasks = computed(() => queue.tasks.some((t) => t.status === TASK_STATUS.SUCCESS))
 
 function handleFileChange(uploadFile) {
-  const task = queue.addTask(uploadFile.raw);
+  const task = queue.addTask(uploadFile.raw)
   if (!queue.currentTaskId) {
-    queue.startTask(task.id);
+    queue.startTask(task.id)
   }
-  uploadRef.value?.clearFiles();
+  uploadRef.value?.clearFiles()
 }
 
 function handlePause(taskId) {
-  queue.pauseTask(taskId);
+  queue.pauseTask(taskId)
 }
 
 function handleResume(taskId) {
   if (queue.hasFile(taskId)) {
-    queue.resumeTask(taskId);
+    queue.resumeTask(taskId)
   } else {
-    handleSelectFileForResume(taskId);
+    handleSelectFileForResume(taskId)
   }
 }
 
 function handleRetry(taskId) {
   if (queue.hasFile(taskId)) {
-    queue.updateTask(taskId, { status: TASK_STATUS.PENDING });
+    queue.updateTask(taskId, { status: TASK_STATUS.PENDING })
     if (!queue.currentTaskId) {
-      queue.startTask(taskId);
+      queue.startTask(taskId)
     }
   } else {
-    handleSelectFileForResume(taskId);
+    handleSelectFileForResume(taskId)
   }
 }
 
 function handleSelectFileForResume(taskId) {
-  pendingResumeTaskId.value = taskId;
-  resumeFileInput.value?.click();
+  pendingResumeTaskId.value = taskId
+  resumeFileInput.value?.click()
 }
 
 function handleResumeFileChange(e) {
-  const file = e.target.files?.[0];
-  if (!file || !pendingResumeTaskId.value) return;
+  const file = e.target.files?.[0]
+  if (!file || !pendingResumeTaskId.value) return
 
-  const taskId = pendingResumeTaskId.value;
-  pendingResumeTaskId.value = null;
+  const taskId = pendingResumeTaskId.value
+  pendingResumeTaskId.value = null
 
   try {
-    queue.resumeTask(taskId, file);
-    ElMessage.success("文件已选择，开始恢复上传");
+    queue.resumeTask(taskId, file)
+    ElMessage.success('文件已选择，开始恢复上传')
   } catch (err) {
-    if ((err as Error).message === "NO_FILE") {
-      ElMessage.error("文件选择失败，请重试");
+    if ((err as Error).message === 'NO_FILE') {
+      ElMessage.error('文件选择失败，请重试')
     }
   }
 
-  e.target.value = "";
+  e.target.value = ''
 }
 
 function clearSuccessTasks() {
-  const successIds = queue.tasks
-    .filter((t) => t.status === TASK_STATUS.SUCCESS)
-    .map((t) => t.id);
-  successIds.forEach((id) => queue.removeTask(id));
+  const successIds = queue.tasks.filter((t) => t.status === TASK_STATUS.SUCCESS).map((t) => t.id)
+  successIds.forEach((id) => queue.removeTask(id))
 }
 
 function isProgressVisible(task) {
   return (
-    [TASK_STATUS.UPLOADING, TASK_STATUS.PAUSED, TASK_STATUS.ERROR].includes(
-      task.status,
-    ) && task.totalChunks > 0
-  );
+    [TASK_STATUS.UPLOADING, TASK_STATUS.PAUSED, TASK_STATUS.ERROR].includes(task.status) &&
+    task.totalChunks > 0
+  )
 }
 
 function statusLabel(status) {
   const map = {
-    [TASK_STATUS.PENDING]: "排队中",
-    [TASK_STATUS.HASHING]: "计算中",
-    [TASK_STATUS.UPLOADING]: "上传中",
-    [TASK_STATUS.PAUSED]: "已暂停",
-    [TASK_STATUS.SUCCESS]: "已完成",
-    [TASK_STATUS.ERROR]: "失败",
-  };
-  return map[status] || status;
+    [TASK_STATUS.PENDING]: '排队中',
+    [TASK_STATUS.HASHING]: '计算中',
+    [TASK_STATUS.UPLOADING]: '上传中',
+    [TASK_STATUS.PAUSED]: '已暂停',
+    [TASK_STATUS.SUCCESS]: '已完成',
+    [TASK_STATUS.ERROR]: '失败',
+  }
+  return map[status] || status
 }
 
 function statusTagType(status) {
   const map = {
-    [TASK_STATUS.PENDING]: "info",
-    [TASK_STATUS.HASHING]: "warning",
-    [TASK_STATUS.UPLOADING]: "",
-    [TASK_STATUS.PAUSED]: "warning",
-    [TASK_STATUS.SUCCESS]: "success",
-    [TASK_STATUS.ERROR]: "danger",
-  };
-  return map[status] || "info";
+    [TASK_STATUS.PENDING]: 'info',
+    [TASK_STATUS.HASHING]: 'warning',
+    [TASK_STATUS.UPLOADING]: '',
+    [TASK_STATUS.PAUSED]: 'warning',
+    [TASK_STATUS.SUCCESS]: 'success',
+    [TASK_STATUS.ERROR]: 'danger',
+  }
+  return map[status] || 'info'
 }
 
 function formatSize(bytes) {
-  if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
 onMounted(async () => {
-  queue.loadTasks();
+  queue.loadTasks()
 
-  const unfinishedTasks = queue.tasks.filter(
-    (t) => t.status !== TASK_STATUS.SUCCESS && t.fileHash,
-  );
+  const unfinishedTasks = queue.tasks.filter((t) => t.status !== TASK_STATUS.SUCCESS && t.fileHash)
   for (const task of unfinishedTasks) {
-    await queue.syncTaskWithServer(task.id);
+    await queue.syncTaskWithServer(task.id)
   }
 
-  const staleTasks = queue.tasks.filter(
-    (t) => !t.fileHash && !queue.hasFile(t.id),
-  );
-  staleTasks.forEach((t) => queue.removeTask(t.id));
-});
+  const staleTasks = queue.tasks.filter((t) => !t.fileHash && !queue.hasFile(t.id))
+  staleTasks.forEach((t) => queue.removeTask(t.id))
+})
 </script>
 
 <style lang="scss" scoped>
-@use "./index.scss";
+@use './index.scss';
 </style>

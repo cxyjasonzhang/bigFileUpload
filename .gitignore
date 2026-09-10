@@ -1,11 +1,19 @@
+# 依赖
+node_modules/
 client/node_modules/
-client/dist/
 server/node_modules/
-server/uploads/
-server/chunks/
+
+# 构建产物与运行时数据
+client/dist/
 client/build/
 server/build/
+server/uploads/
+server/chunks/
+
+# 工具与本地配置
 .trae/
 .codebuddy/
 openspec/
-docs/
+
+# husky 运行时生成
+.husky/_

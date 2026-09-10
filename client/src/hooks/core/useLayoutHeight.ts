@@ -59,7 +59,7 @@ export function useLayoutHeight(options: LayoutHeightOptions = {}) {
           document.documentElement.style.setProperty(cssVarName, newHeight)
         })
       },
-      { immediate: true }
+      { immediate: true },
     )
   }
 
@@ -73,7 +73,7 @@ export function useLayoutHeight(options: LayoutHeightOptions = {}) {
     /** 头部高度（响应式） */
     headerHeight,
     /** 内容头部高度（响应式） */
-    contentHeaderHeight
+    contentHeaderHeight,
   }
 }
 
@@ -88,7 +88,7 @@ export function useLayoutHeight(options: LayoutHeightOptions = {}) {
  */
 export function useAutoLayoutHeight(
   headerIds: string[] = ['app-header', 'app-content-header'],
-  options: LayoutHeightOptions = {}
+  options: LayoutHeightOptions = {},
 ) {
   const { extraSpacing = 35, updateCssVar = true, cssVarName = '--art-full-height' } = options
 
@@ -114,7 +114,7 @@ export function useAutoLayoutHeight(
           document.documentElement.style.setProperty(cssVarName, newHeight)
         })
       },
-      { immediate: true }
+      { immediate: true },
     )
   }
 
@@ -146,6 +146,6 @@ export function useAutoLayoutHeight(
     /** 头部高度（响应式） */
     headerHeight,
     /** 内容头部高度（响应式） */
-    contentHeaderHeight
+    contentHeaderHeight,
   }
 }

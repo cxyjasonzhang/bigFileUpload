@@ -15,7 +15,10 @@
       <!-- 动态菜单树：目录（menuType=0）渲染为子菜单，菜单（menuType=1）渲染为菜单项 -->
       <template v-for="item in menuTree" :key="item.menuId">
         <!-- 目录：有子级时渲染为 el-sub-menu，否则退化为菜单项 -->
-        <el-sub-menu v-if="item.menuType === 0 && item.children?.length" :index="String(item.menuId)">
+        <el-sub-menu
+          v-if="item.menuType === 0 && item.children?.length"
+          :index="String(item.menuId)"
+        >
           <template #title>
             <!-- 用 el-icon 包裹 SvgIcon：折叠时 el-menu--collapse 依赖 [class^=el-icon] 识别并显示图标 -->
             <el-icon v-if="item.icon" class="menu-icon">
@@ -46,22 +49,22 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
-import { useRoute, useRouter } from "vue-router";
-import { useLayoutStore } from "@/stores/layout";
-import { usePermissionStore } from "@/stores/permission";
+import { storeToRefs } from 'pinia'
+import { useRoute, useRouter } from 'vue-router'
+import { useLayoutStore } from '@/stores/layout'
+import { usePermissionStore } from '@/stores/permission'
 
-const route = useRoute();
-const router = useRouter();
-const layout = useLayoutStore();
-const permission = usePermissionStore();
-const { collapsed } = storeToRefs(layout);
-const { menuTree } = storeToRefs(permission);
+const route = useRoute()
+const router = useRouter()
+const layout = useLayoutStore()
+const permission = usePermissionStore()
+const { collapsed } = storeToRefs(layout)
+const { menuTree } = storeToRefs(permission)
 
 // 菜单点击 → 路由导航（菜单项的 index 即路由 path）
 function handleSelect(index: string) {
-  if (index.startsWith("/")) {
-    router.push(index);
+  if (index.startsWith('/')) {
+    router.push(index)
   }
 }
 </script>

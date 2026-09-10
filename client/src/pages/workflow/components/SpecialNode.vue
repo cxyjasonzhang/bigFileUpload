@@ -13,9 +13,7 @@ const y = computed(() => `${Math.round(props.position.y)}px`)
   <div class="vue-flow__node-default">
     <div>{{ data.label }}</div>
 
-    <div>
-      {{ x }} {{ y }}
-    </div>
+    <div>{{ x }} {{ y }}</div>
 
     <Handle type="source" :position="Position.Bottom" />
   </div>

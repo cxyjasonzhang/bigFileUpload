@@ -1,17 +1,17 @@
 // 权限控制工具：按钮级权限点判断 + v-perms 指令
 
-import type { App, Directive } from "vue";
-import { usePermissionStore } from "@/stores/permission";
-import type { MenuTree } from "@/types/router";
+import type { App, Directive } from 'vue'
+import { usePermissionStore } from '@/stores/permission'
+import type { MenuTree } from '@/types/router'
 
 /**
  * 判断当前用户是否拥有某个权限点
  * @param perm 权限标识（如 "role:add"）
  */
 export function hasPerms(perm?: string): boolean {
-  if (!perm) return true;
-  const store = usePermissionStore();
-  return store.hasPerm(perm);
+  if (!perm) return true
+  const store = usePermissionStore()
+  return store.hasPerm(perm)
 }
 
 /**
@@ -21,19 +21,19 @@ export function hasPerms(perm?: string): boolean {
  */
 const permsDirective: Directive<HTMLElement, string | string[]> = {
   mounted(el, binding) {
-    const perms = binding.value;
-    const list = Array.isArray(perms) ? perms : [perms];
-    const store = usePermissionStore();
-    const allowed = list.some((p) => store.hasPerm(p));
+    const perms = binding.value
+    const list = Array.isArray(perms) ? perms : [perms]
+    const store = usePermissionStore()
+    const allowed = list.some((p) => store.hasPerm(p))
     if (!allowed) {
-      el.parentNode?.removeChild(el);
+      el.parentNode?.removeChild(el)
     }
   },
-};
+}
 
 /** 注册权限指令（在 main.ts 中调用一次） */
 export function setupPermission(app: App) {
-  app.directive("perms", permsDirective);
+  app.directive('perms', permsDirective)
 }
 
 /**

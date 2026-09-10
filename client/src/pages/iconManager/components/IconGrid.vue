@@ -10,9 +10,7 @@
         class="search-input"
         @input="onSearch"
       />
-      <el-button type="primary" :icon="Upload" @click="$emit('import')">
-        导入图标
-      </el-button>
+      <el-button type="primary" :icon="Upload" @click="$emit('import')"> 导入图标 </el-button>
     </div>
 
     <!-- 图标网格 -->
@@ -26,10 +24,22 @@
         <div class="icon-mask" />
         <!-- 悬浮操作（2×2 网格） -->
         <div class="icon-overlay">
-          <el-button class="icon-action-btn" :icon="Edit" @click.stop="$emit('edit', 'edit', icon)" />
+          <el-button
+            class="icon-action-btn"
+            :icon="Edit"
+            @click.stop="$emit('edit', 'edit', icon)"
+          />
           <el-button class="icon-action-btn" :icon="Delete" @click.stop="$emit('delete', icon)" />
-          <el-button class="icon-action-btn" :icon="CopyDocument" @click.stop="$emit('copy', icon)" />
-          <el-button class="icon-action-btn" :icon="Download" @click.stop="$emit('download', icon)" />
+          <el-button
+            class="icon-action-btn"
+            :icon="CopyDocument"
+            @click.stop="$emit('copy', icon)"
+          />
+          <el-button
+            class="icon-action-btn"
+            :icon="Download"
+            @click.stop="$emit('download', icon)"
+          />
         </div>
       </div>
     </div>
@@ -63,7 +73,15 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Search, Upload, Edit, Delete, Loading, CopyDocument, Download } from '@element-plus/icons-vue'
+import {
+  Search,
+  Upload,
+  Edit,
+  Delete,
+  Loading,
+  CopyDocument,
+  Download,
+} from '@element-plus/icons-vue'
 
 const props = defineProps<{
   icons: any[]
@@ -248,8 +266,12 @@ function handleCardClick(icon) {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .pagination {

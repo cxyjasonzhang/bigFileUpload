@@ -23,17 +23,23 @@
         <!-- 渲染普通列 -->
         <ElTableColumn v-else v-bind="cleanColumnProps(col)">
           <template v-if="col.useHeaderSlot && col.prop" #header="headerScope">
-            <slot :name="col.headerSlotName || `${col.prop}-header`"
-              v-bind="{ ...headerScope, prop: col.prop, label: col.label }">
+            <slot
+              :name="col.headerSlotName || `${col.prop}-header`"
+              v-bind="{ ...headerScope, prop: col.prop, label: col.label }"
+            >
               {{ col.label }}
             </slot>
           </template>
           <template v-if="col.useSlot && col.prop" #default="slotScope">
-            <slot v-if="shouldRenderSlotScope(slotScope)" :name="col.slotName || col.prop" v-bind="{
-              ...slotScope,
-              prop: col.prop,
-              value: col.prop ? slotScope.row[col.prop] : undefined
-            }" />
+            <slot
+              v-if="shouldRenderSlotScope(slotScope)"
+              :name="col.slotName || col.prop"
+              v-bind="{
+                ...slotScope,
+                prop: col.prop,
+                value: col.prop ? slotScope.row[col.prop] : undefined,
+              }"
+            />
           </template>
         </ElTableColumn>
       </template>
@@ -47,11 +53,21 @@
       </template>
     </ElTable>
 
-    <div class="pagination custom-pagination" v-if="showPagination" :class="mergedPaginationOptions?.align"
-      ref="paginationRef">
-      <ElPagination v-bind="mergedPaginationOptions" :total="pagination?.total" :disabled="loading"
-        :page-size="pagination?.size" :current-page="pagination?.current" @size-change="handleSizeChange"
-        @current-change="handleCurrentChange" />
+    <div
+      v-if="showPagination"
+      ref="paginationRef"
+      class="pagination custom-pagination"
+      :class="mergedPaginationOptions?.align"
+    >
+      <ElPagination
+        v-bind="mergedPaginationOptions"
+        :total="pagination?.total"
+        :disabled="loading"
+        :page-size="pagination?.size"
+        :current-page="pagination?.current"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
     </div>
   </div>
 </template>
@@ -132,7 +148,7 @@ const props = withDefaults(defineProps<ArtTableProps>(), {
   size: undefined,
   emptyHeight: '100%',
   emptyText: '暂无数据',
-  showTableHeader: true
+  showTableHeader: true,
 })
 const instance = getCurrentInstance()
 const attrs = useAttrs()
@@ -140,7 +156,7 @@ const attrs = useAttrs()
 const LAYOUT = {
   MOBILE: 'prev, pager, next, sizes, jumper, total',
   IPAD: 'prev, pager, next, jumper, total',
-  DESKTOP: 'total, prev, pager, next, sizes, jumper'
+  DESKTOP: 'total, prev, pager, next, sizes, jumper',
 }
 
 const layout = computed(() => {
@@ -161,13 +177,13 @@ const DEFAULT_PAGINATION_OPTIONS: PaginationOptions = {
   layout: layout.value,
   hideOnSinglePage: false,
   size: 'default',
-  pagerCount: width.value > 1200 ? 7 : 5
+  pagerCount: width.value > 1200 ? 7 : 5,
 }
 
 // 合并分页配置
 const mergedPaginationOptions = computed(() => ({
   ...DEFAULT_PAGINATION_OPTIONS,
-  ...props.paginationOptions
+  ...props.paginationOptions,
 }))
 
 // 边框 (优先级：props > store)
@@ -212,7 +228,7 @@ const { containerHeight } = useTableHeight({
   showTableHeader: computed(() => props.showTableHeader),
   paginationHeight,
   tableHeaderHeight,
-  paginationSpacing: PAGINATION_SPACING
+  paginationSpacing: PAGINATION_SPACING,
 })
 
 // 表格高度逻辑
@@ -232,7 +248,7 @@ const headerCellStyle = computed(() => ({
   background: isHeaderBackground.value
     ? 'var(--el-fill-color-lighter)'
     : 'var(--default-box-color)',
-  ...(props.headerCellStyle || {}) // 合并用户传入的样式
+  ...(props.headerCellStyle || {}), // 合并用户传入的样式
 }))
 
 // 只有显式传入时才覆盖 ElTable 的原生默认值，避免继承的 Boolean props 把官方默认值冲掉。
@@ -253,7 +269,7 @@ const mergedTableProps = computed(() => ({
   // Element Plus 默认值为 true，未显式传入时不应被 ArtTable 覆盖成 false。
   selectOnIndeterminate: hasExplicitTableProp('selectOnIndeterminate')
     ? props.selectOnIndeterminate
-    : undefined
+    : undefined,
 }))
 
 // 是否显示分页器
@@ -341,12 +357,12 @@ watchEffect(
       tableHeaderRef.value = undefined
     }
   },
-  { flush: 'post' }
+  { flush: 'post' },
 )
 
 defineExpose({
   scrollToTop,
-  elTableRef
+  elTableRef,
 })
 </script>
 

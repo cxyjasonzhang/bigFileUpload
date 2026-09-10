@@ -7,19 +7,17 @@
           <component :is="collapsed ? Expand : Fold" />
         </el-icon>
       </el-button>
-
-
     </div>
 
     <div class="header-right">
-        <!-- 全屏切换 -->
+      <!-- 全屏切换 -->
       <el-button text @click="toggleFullscreen">
         <el-icon size="18">
           <SvgIcon :name="isFullscreen ? 'ai/reduce' : 'ai/expand'" :size="16" />
         </el-icon>
       </el-button>
       <!-- 主题配置入口 -->
-      <el-button text @click="drawerVisible = true" title="主题设置" style="margin-left: 0;">
+      <el-button text title="主题设置" style="margin-left: 0" @click="drawerVisible = true">
         <el-icon size="20">
           <Setting />
         </el-icon>
@@ -45,64 +43,63 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
-import {
-  Expand,
-  Fold,
-  FullScreen,
-  Aim,
-  ArrowDown,
-  Setting,
-} from "@element-plus/icons-vue";
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { Expand, Fold, FullScreen, Aim, ArrowDown, Setting } from '@element-plus/icons-vue'
 // import SvgIcon from "../SvgIcon.vue";
 // ElMessage 由 unplugin-auto-import 自动导入
-import { authState, logout } from "@/utils/auth";
-import { useLayoutStore } from "@/stores/layout";
-import ConfigDrawer from "./ConfigDrawer.vue";
+import { authState, logout } from '@/utils/auth'
+import { useLayoutStore } from '@/stores/layout'
+import ConfigDrawer from './ConfigDrawer.vue'
 
-const router = useRouter();
-const layout = useLayoutStore();
-const collapsed = computed(() => layout.collapsed);
-const isFullscreen = ref(false);
-const drawerVisible = ref(false);
+const router = useRouter()
+const layout = useLayoutStore()
+const collapsed = computed(() => layout.collapsed)
+const isFullscreen = ref(false)
+const drawerVisible = ref(false)
 
 // 同步系统全屏状态（如用户按 ESC 退出全屏时图标也能正确回弹）
 function syncFullscreen() {
-  isFullscreen.value = !!document.fullscreenElement;
+  isFullscreen.value = !!document.fullscreenElement
 }
 
 onMounted(() => {
-  document.addEventListener("fullscreenchange", syncFullscreen);
-});
+  document.addEventListener('fullscreenchange', syncFullscreen)
+})
 
 onUnmounted(() => {
-  document.removeEventListener("fullscreenchange", syncFullscreen);
-});
+  document.removeEventListener('fullscreenchange', syncFullscreen)
+})
 
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen();
-    isFullscreen.value = true;
+    document.documentElement.requestFullscreen()
+    isFullscreen.value = true
   } else {
-    document.exitFullscreen();
-    isFullscreen.value = false;
+    document.exitFullscreen()
+    isFullscreen.value = false
   }
 }
 
 async function handleCommand(cmd: string) {
-  if (cmd === "logout") {
-    await logout();
-    console.log("[DEBUG-logout] handleCommand：logout() 已返回，当前 isLoggedIn =", authState.isLoggedIn);
-    ElMessage.success("已退出登录");
+  if (cmd === 'logout') {
+    await logout()
+    console.log(
+      '[DEBUG-logout] handleCommand：logout() 已返回，当前 isLoggedIn =',
+      authState.isLoggedIn,
+    )
+    ElMessage.success('已退出登录')
     try {
-      await router.push("/login");
-      console.log("[DEBUG-logout] push('/login') 已结束，当前路由 =", router.currentRoute.value.fullPath);
+      await router.push('/login')
+      console.log(
+        "[DEBUG-logout] push('/login') 已结束，当前路由 =",
+        router.currentRoute.value.fullPath,
+      )
     } catch (navErr) {
-      console.warn("[DEBUG-logout] push('/login') 被中断/失败:", navErr);
+      console.warn("[DEBUG-logout] push('/login') 被中断/失败:", navErr)
     }
-  } else if (cmd === "profile") {
-    ElMessage.info("个人信息功能开发中");
+  } else if (cmd === 'profile') {
+    ElMessage.info('个人信息功能开发中')
   }
 }
 </script>

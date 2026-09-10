@@ -25,16 +25,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRouter } from "vue-router";
-import { storeToRefs } from "pinia";
-import { usePermissionStore } from "@/stores/permission";
-import { authState } from "@/utils/auth";
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
+import { usePermissionStore } from '@/stores/permission'
+import { authState } from '@/utils/auth'
 
-defineOptions({ name: "Workbench" });
+defineOptions({ name: 'Workbench' })
 
-const permission = usePermissionStore();
-const { menuTree } = storeToRefs(permission);
+const permission = usePermissionStore()
+const { menuTree } = storeToRefs(permission)
 
 // 从动态菜单树扁平化出「菜单」节点（menuType=1），工作台不显示在入口卡片里
 const entries = computed(() => {
@@ -42,13 +42,13 @@ const entries = computed(() => {
     nodes.flatMap((n) => [
       ...(n.menuType === 1 ? [n] : []),
       ...(n.children ? flatten(n.children) : []),
-    ]);
-  return flatten(menuTree.value).filter((m) => m.path !== "/workbench");
-});
+    ])
+  return flatten(menuTree.value).filter((m) => m.path !== '/workbench')
+})
 
-const router = useRouter();
+const router = useRouter()
 function go(path: string) {
-  router.push(path);
+  router.push(path)
 }
 </script>
 

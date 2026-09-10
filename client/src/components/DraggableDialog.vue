@@ -1,15 +1,37 @@
 <template>
-  <el-dialog ref="dialogRef" :model-value="modelValue" :top="top" :show-close="false"
-    @update:model-value="handleVisibleChange" @opened="handleOpened" @closed="handleClosed" v-bind="$attrs">
+  <el-dialog
+    ref="dialogRef"
+    :model-value="modelValue"
+    :top="top"
+    :show-close="false"
+    v-bind="$attrs"
+    @update:model-value="handleVisibleChange"
+    @opened="handleOpened"
+    @closed="handleClosed"
+  >
     <template #header>
-      <div class="draggable-dialog-header" :class="{ 'is-draggable': draggable && !isFullscreen }"
-        @pointerdown="onPointerDown">
+      <div
+        class="draggable-dialog-header"
+        :class="{ 'is-draggable': draggable && !isFullscreen }"
+        @pointerdown="onPointerDown"
+      >
         <span class="dialog-title">{{ title }}</span>
         <div class="header-actions">
           <div class="toggle-btn" @click.stop="toggleFullscreen">
-            <SvgIcon :name="isFullscreen ? 'ai/reduce' : 'ai/expand'" class="toggle-icon" color="#999" :size="14" />
+            <SvgIcon
+              :name="isFullscreen ? 'ai/reduce' : 'ai/expand'"
+              class="toggle-icon"
+              color="#999"
+              :size="14"
+            />
           </div>
-          <el-button :icon="Close" circle size="small" class="action-btn close-btn" @click.stop="closeDialog" />
+          <el-button
+            :icon="Close"
+            circle
+            size="small"
+            class="action-btn close-btn"
+            @click.stop="closeDialog"
+          />
         </div>
       </div>
     </template>

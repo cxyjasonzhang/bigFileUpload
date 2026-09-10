@@ -1,0 +1,12 @@
+# 依赖与产物
+node_modules
+dist
+build
+
+# unplugin 自动生成的声明与清单
+src/components.d.ts
+src/types/import/auto-imports.d.ts
+.auto-import.json
+
+# 锁文件
+package-lock.json

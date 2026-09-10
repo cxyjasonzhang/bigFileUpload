@@ -35,12 +35,14 @@
                 size="small"
                 :type="isDesaturated ? 'warning' : 'default'"
                 @click="handleDesaturate"
-              >{{ isDesaturated ? '还原' : '去色' }}</el-button>
+                >{{ isDesaturated ? '还原' : '去色' }}</el-button
+              >
               <el-button
                 size="small"
                 :type="isTrimmed ? 'warning' : 'default'"
                 @click="handleTrimMargin"
-              >{{ isTrimmed ? '还原' : '去边距' }}</el-button>
+                >{{ isTrimmed ? '还原' : '去边距' }}</el-button
+              >
             </div>
           </div>
         </el-form-item>
@@ -89,19 +91,15 @@
             contenteditable="true"
             @blur="updateIconName(index, $event)"
             @keydown.enter.prevent="($event.target as HTMLElement)?.blur()"
-          >{{ file.iconName }}</span>
+            >{{ file.iconName }}</span
+          >
           <span v-if="file.duplicate" class="duplicate-warn">
             <el-icon><WarningFilled /></el-icon> 已存在
           </span>
           <span v-else class="check-ok">
             <el-icon><CircleCheckFilled /></el-icon>
           </span>
-          <el-button
-            link
-            size="small"
-            class="file-delete"
-            @click="removeFile(index)"
-          >
+          <el-button link size="small" class="file-delete" @click="removeFile(index)">
             <el-icon><Close /></el-icon>
           </el-button>
         </div>
@@ -132,7 +130,13 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
 import { type FormInstance } from 'element-plus'
-import { UploadFilled, Document, WarningFilled, CircleCheckFilled, Close } from '@element-plus/icons-vue'
+import {
+  UploadFilled,
+  Document,
+  WarningFilled,
+  CircleCheckFilled,
+  Close,
+} from '@element-plus/icons-vue'
 import DraggableDialog from '@/components/DraggableDialog.vue'
 import { updateIcon, batchCreateIcons, getIconNames, type IconInput } from '@/utils/api'
 
@@ -180,10 +184,13 @@ const editRules = {
   name: [{ required: true, message: '请输入图标名称', trigger: 'blur' }],
   svgContent: [
     { required: true, message: '请输入SVG内容', trigger: 'blur' },
-    { validator: (_rule, value, cb) => {
-      if (value && !value.includes('<svg')) cb(new Error('SVG内容不合法'))
-      else cb()
-    }, trigger: 'blur' },
+    {
+      validator: (_rule, value, cb) => {
+        if (value && !value.includes('<svg')) cb(new Error('SVG内容不合法'))
+        else cb()
+      },
+      trigger: 'blur',
+    },
   ],
 }
 
@@ -257,7 +264,9 @@ async function processFiles(files: File[]) {
   try {
     const res = await getIconNames(targetGroupId.value)
     existNames = res.data?.data || []
-  } catch { /* 忽略 */ }
+  } catch {
+    /* 忽略 */
+  }
 
   for (const file of files) {
     // 大小校验
@@ -278,7 +287,7 @@ async function processFiles(files: File[]) {
     // 处理重复名
     const baseName = iconName
     let counter = 1
-    while (fileList.some(f => f.iconName === iconName)) {
+    while (fileList.some((f) => f.iconName === iconName)) {
       iconName = `${baseName}_${counter++}`
     }
 
@@ -315,7 +324,7 @@ function readFileAsText(file: File): Promise<string> {
 
 function updateIconName(index: number, e: FocusEvent) {
   const target = e.target as HTMLElement | null
-  fileList[index].iconName = (target?.textContent?.trim() || '') || fileList[index].iconName
+  fileList[index].iconName = target?.textContent?.trim() || '' || fileList[index].iconName
 }
 
 function removeFile(index) {
@@ -341,8 +350,8 @@ function desaturateSvg(svgString) {
   const svg = doc.querySelector('svg')
   if (!svg) return svgString
 
-  svg.querySelectorAll('[fill]').forEach(el => el.removeAttribute('fill'))
-  svg.querySelectorAll('[stroke]').forEach(el => el.removeAttribute('stroke'))
+  svg.querySelectorAll('[fill]').forEach((el) => el.removeAttribute('fill'))
+  svg.querySelectorAll('[stroke]').forEach((el) => el.removeAttribute('stroke'))
 
   return new XMLSerializer().serializeToString(svg)
 }
@@ -357,9 +366,15 @@ function trimSvgMargin(svgString) {
   document.body.appendChild(temp)
 
   const svg = temp.querySelector('svg')
-  if (!svg) { document.body.removeChild(temp); return svgString }
+  if (!svg) {
+    document.body.removeChild(temp)
+    return svgString
+  }
 
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity
   for (const child of svg.children) {
     try {
       const bbox = (child as SVGGraphicsElement).getBBox()
@@ -367,7 +382,9 @@ function trimSvgMargin(svgString) {
       minY = Math.min(minY, bbox.y)
       maxX = Math.max(maxX, bbox.x + bbox.width)
       maxY = Math.max(maxY, bbox.y + bbox.height)
-    } catch { /* 跳过不可测量元素 */ }
+    } catch {
+      /* 跳过不可测量元素 */
+    }
   }
 
   document.body.removeChild(temp)
@@ -375,7 +392,10 @@ function trimSvgMargin(svgString) {
   if (!isFinite(minX)) return svgString
 
   const pad = 1
-  svg.setAttribute('viewBox', `${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}`)
+  svg.setAttribute(
+    'viewBox',
+    `${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}`,
+  )
   svg.setAttribute('width', '100%')
   svg.setAttribute('height', '100%')
 
@@ -430,12 +450,18 @@ async function handleConfirm() {
       const valid = editFormRef.value
         ? await editFormRef.value.validate().catch(() => false)
         : false
-      if (!valid) { submitting.value = false; return }
+      if (!valid) {
+        submitting.value = false
+        return
+      }
       await updateIcon(props.iconData.id, { ...editForm } as IconInput)
       ElMessage.success('图标更新成功')
     } else {
       // 批量导入
-      if (fileList.length === 0) { submitting.value = false; return }
+      if (fileList.length === 0) {
+        submitting.value = false
+        return
+      }
       if (!targetGroupId.value) {
         ElMessage.warning('请选择所属分组')
         submitting.value = false
@@ -443,7 +469,7 @@ async function handleConfirm() {
       }
       await batchCreateIcons({
         groupId: targetGroupId.value,
-        icons: fileList.map(f => ({
+        icons: fileList.map((f) => ({
           name: f.iconName,
           description: '',
           svgContent: f.svgContent,

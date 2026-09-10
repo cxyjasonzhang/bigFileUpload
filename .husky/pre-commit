@@ -1,0 +1,106 @@
+# 提交前：先定位一个可用的 Node（>= 18），再执行 lint-staged。
+#
+# 为什么不直接用 PATH 上的 node：
+#   ESLint 9 / lint-staged 15 依赖 structuredClone（Node 17+ 才有）。
+#   编辑器的 Git 集成不会加载 shell profile（`fnm env --use-on-cd` 对它无效），
+#   其 PATH 上可能是一个过低的 Node，于是 eslint 抛出与配置毫无关系的
+#   "structuredClone is not defined" 并阻断提交，极难排查。
+#   因此这里主动在 fnm / nvm / 系统安装目录中查找符合 .node-version 的版本。
+
+REQUIRED_MAJOR=18
+
+# 读取指定 node 的完整版本号；不可用时返回空
+version_of() {
+  "$1" -p "process.versions.node" 2>/dev/null
+}
+
+# 列出某个根目录下所有已安装的 node
+scan_root() {
+  for p in "$1"/node-versions/*/installation/node.exe "$1"/node-versions/*/installation/bin/node "$1"/v*/node.exe "$1"/node.exe; do
+    if [ -f "$p" ]; then
+      printf '%s\n' "$p"
+    fi
+  done
+}
+
+# 候选来源：版本管理器环境变量 + PATH 的每一项
+# （IDE 环境里 FNM_DIR 通常不存在，但 fnm 根目录本身就在 PATH 上）
+DIRS=$(mktemp)
+{
+  printf '%s\n' "$FNM_DIR" "$NVM_HOME" "$HOME/.fnm" "$LOCALAPPDATA/fnm" "$APPDATA/nvm"
+  printf '%s\n' "$PATH" | tr ':' '\n'
+} > "$DIRS"
+
+NODES=$(mktemp)
+while IFS= read -r dir; do
+  if [ -n "$dir" ] && [ -d "$dir" ]; then
+    scan_root "$dir"
+  fi
+done < "$DIRS" > "$NODES"
+rm -f "$DIRS"
+
+# 期望版本：.node-version 声明的版本
+WANT=""
+if [ -f .node-version ]; then
+  WANT=$(tr -d ' \t\r\n' < .node-version)
+fi
+
+BEST_NODE=""
+
+# 第一轮：路径中含版本号且与 .node-version 一致者优先（纯字符串比较，最快）
+if [ -n "$WANT" ]; then
+  while IFS= read -r p; do
+    if [ -n "$p" ]; then
+      case "$p" in
+        */v"$WANT"/*)
+          if [ "$(version_of "$p")" = "$WANT" ]; then
+            BEST_NODE=$p
+            break
+          fi
+          ;;
+      esac
+    fi
+  done < "$NODES"
+fi
+
+# 第二轮：退而求其次，取已安装的最高版本（须 >= REQUIRED_MAJOR）
+if [ -z "$BEST_NODE" ]; then
+  BEST_MAJOR=0
+  while IFS= read -r p; do
+    if [ -n "$p" ]; then
+      v=$(version_of "$p")
+      if [ -n "$v" ]; then
+        m=${v%%.*}
+        if [ "$m" -ge "$REQUIRED_MAJOR" ] 2>/dev/null; then
+          if [ "$m" -gt "$BEST_MAJOR" ]; then
+            BEST_MAJOR=$m
+            BEST_NODE=$p
+          fi
+        fi
+      fi
+    fi
+  done < "$NODES"
+fi
+rm -f "$NODES"
+
+if [ -z "$BEST_NODE" ]; then
+  echo "✖ 未找到 Node >= $REQUIRED_MAJOR 的安装，无法执行 lint 检查。"
+  echo "  当前 PATH 上的 node：$(node -v 2>/dev/null || echo '不存在')"
+  echo "  请先安装 .node-version 声明的版本，例如：fnm install $(cat .node-version 2>/dev/null)"
+  exit 1
+fi
+
+# 把选中的 Node 目录置于 PATH 最前，供 eslint / prettier 等子进程使用
+NODE_DIR=$(dirname "$BEST_NODE")
+case "$NODE_DIR" in
+  [A-Za-z]:[\\/]*)
+    # Windows 路径必须转成 MSYS 形式，否则会被 PATH 里的冒号截断
+    NODE_DIR=$(printf '%s' "$NODE_DIR" | sed -e 's|\\|/|g' -e 's|^\([A-Za-z]\):|/\1|')
+    ;;
+esac
+PATH="$NODE_DIR:$PATH"
+export PATH
+
+echo "husky: 使用 Node $(node -v) [$NODE_DIR]"
+
+npx lint-staged

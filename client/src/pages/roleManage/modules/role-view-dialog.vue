@@ -29,39 +29,39 @@
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
-  import DraggableDialog from '@/components/DraggableDialog.vue'
+import { computed } from 'vue'
+import DraggableDialog from '@/components/DraggableDialog.vue'
 
-  type RoleListItem = Api.SystemManage.RoleListItem
+type RoleListItem = Api.SystemManage.RoleListItem
 
-  interface Props {
-    modelValue: boolean
-    roleData?: RoleListItem
-  }
+interface Props {
+  modelValue: boolean
+  roleData?: RoleListItem
+}
 
-  interface Emits {
-    (e: 'update:modelValue', value: boolean): void
-  }
+interface Emits {
+  (e: 'update:modelValue', value: boolean): void
+}
 
-  const props = withDefaults(defineProps<Props>(), {
-    modelValue: false,
-    roleData: undefined
-  })
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: false,
+  roleData: undefined,
+})
 
-  const emit = defineEmits<Emits>()
+const emit = defineEmits<Emits>()
 
-  /**
-   * 弹窗显示状态双向绑定
-   */
-  const visible = computed({
-    get: () => props.modelValue,
-    set: (value) => emit('update:modelValue', value)
-  })
+/**
+ * 弹窗显示状态双向绑定
+ */
+const visible = computed({
+  get: () => props.modelValue,
+  set: (value) => emit('update:modelValue', value),
+})
 
-  /**
-   * 关闭查看弹窗
-   */
-  const handleClose = () => {
-    visible.value = false
-  }
+/**
+ * 关闭查看弹窗
+ */
+const handleClose = () => {
+  visible.value = false
+}
 </script>

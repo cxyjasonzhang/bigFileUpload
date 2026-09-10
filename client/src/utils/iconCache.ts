@@ -11,37 +11,32 @@
 //
 // 并发合并：同一 name 的多个调用共享一个进行中的 Promise，只发 1 次网络。
 
-import { openDB, type IDBPDatabase } from "idb";
-import {
-  resolveIcon,
-  getIconVersion,
-  type ApiResponse,
-  type IconVersion,
-} from "@/utils/api";
+import { openDB, type IDBPDatabase } from 'idb'
+import { resolveIcon, getIconVersion, type ApiResponse, type IconVersion } from '@/utils/api'
 
-const DB_NAME = "icon-cache";
-const DB_VERSION = 1;
-const ICONS_STORE = "icons";
-const META_STORE = "meta";
-const VERSION_KEY = "iconVersion";
+const DB_NAME = 'icon-cache'
+const DB_VERSION = 1
+const ICONS_STORE = 'icons'
+const META_STORE = 'meta'
+const VERSION_KEY = 'iconVersion'
 
 interface IconCacheRecord {
-  name: string;
-  svgContent: string;
-  savedAt: number;
+  name: string
+  svgContent: string
+  savedAt: number
 }
 
 interface MetaRecord {
-  key: string;
-  value: unknown;
+  key: string
+  value: unknown
 }
 
 // L1 内存缓存（已解析的 SVG 字符串）
-const memory = new Map<string, string>();
+const memory = new Map<string, string>()
 // 进行中的请求（用于并发合并）
-const pending = new Map<string, Promise<string>>();
+const pending = new Map<string, Promise<string>>()
 
-let dbPromise: Promise<IDBPDatabase | null> | null = null;
+let dbPromise: Promise<IDBPDatabase | null> | null = null
 
 /** 获取（或初始化）IndexedDB 连接，失败返回 null（降级为仅内存） */
 function getDB(): Promise<IDBPDatabase | null> {
@@ -49,80 +44,80 @@ function getDB(): Promise<IDBPDatabase | null> {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
       upgrade(db) {
         if (!db.objectStoreNames.contains(ICONS_STORE)) {
-          db.createObjectStore(ICONS_STORE, { keyPath: "name" });
+          db.createObjectStore(ICONS_STORE, { keyPath: 'name' })
         }
         if (!db.objectStoreNames.contains(META_STORE)) {
-          db.createObjectStore(META_STORE, { keyPath: "key" });
+          db.createObjectStore(META_STORE, { keyPath: 'key' })
         }
       },
     }).catch((err) => {
-      console.warn("IndexedDB 不可用，图标缓存降级为仅内存:", err);
-      dbPromise = null;
-      return null;
-    });
+      console.warn('IndexedDB 不可用，图标缓存降级为仅内存:', err)
+      dbPromise = null
+      return null
+    })
   }
-  return dbPromise;
+  return dbPromise
 }
 
 // ─── L2 读写（全部吞错，失败不影响主流程） ─────────
 
 async function idbGetIcon(name: string): Promise<IconCacheRecord | null> {
-  const db = await getDB();
-  if (!db) return null;
+  const db = await getDB()
+  if (!db) return null
   try {
-    const rec = (await db.get(ICONS_STORE, name)) as IconCacheRecord | undefined;
-    return rec ?? null;
+    const rec = (await db.get(ICONS_STORE, name)) as IconCacheRecord | undefined
+    return rec ?? null
   } catch {
-    return null;
+    return null
   }
 }
 
 async function idbSetIcon(name: string, svgContent: string): Promise<void> {
-  const db = await getDB();
-  if (!db) return;
+  const db = await getDB()
+  if (!db) return
   try {
-    await db.put(ICONS_STORE, { name, svgContent, savedAt: Date.now() });
+    await db.put(ICONS_STORE, { name, svgContent, savedAt: Date.now() })
   } catch {
     // 隐私模式等场景写入失败，忽略
   }
 }
 
 async function idbDeleteIcon(name: string): Promise<void> {
-  const db = await getDB();
-  if (!db) return;
+  const db = await getDB()
+  if (!db) return
   try {
-    await db.delete(ICONS_STORE, name);
+    await db.delete(ICONS_STORE, name)
   } catch {
     /* 忽略 */
   }
 }
 
 async function idbClearIcons(): Promise<void> {
-  const db = await getDB();
-  if (!db) return;
+  const db = await getDB()
+  if (!db) return
   try {
-    await db.clear(ICONS_STORE);
+    await db.clear(ICONS_STORE)
   } catch {
     /* 忽略 */
   }
 }
 
 async function metaGet(key: string): Promise<unknown> {
-  const db = await getDB();
-  if (!db) return null;
+  const db = await getDB()
+  if (!db) return null
   try {
-    const rec = (await db.get(META_STORE, key)) as MetaRecord | undefined;
-    return rec?.value ?? null;
+    const rec = (await db.get(META_STORE, key)) as MetaRecord | undefined
+    return rec?.value ?? null
   } catch {
-    return null;
+    return null
   }
 }
 
 async function metaSet(key: string, value: unknown): Promise<void> {
-  const db = await getDB();
-  if (!db) return;
+  const db = await getDB()
+  if (!db) return
   try {
-    await db.put(META_STORE, { key, value });
+    await db.put(META_STORE, { key, value })
   } catch {
     /* 忽略 */
   }
@@ -136,49 +131,49 @@ async function metaSet(key: string, value: unknown): Promise<void> {
  * @returns SVG 内容；网络失败则抛出
  */
 export async function get(name: string): Promise<string> {
-  if (!name) return "";
+  if (!name) return ''
 
   // L1 命中
-  if (memory.has(name)) return memory.get(name) as string;
+  if (memory.has(name)) return memory.get(name) as string
   // 并发合并：复用进行中的同一个 Promise
-  if (pending.has(name)) return pending.get(name) as Promise<string>;
+  if (pending.has(name)) return pending.get(name) as Promise<string>
 
   const task = (async () => {
     // L2 命中
-    const rec = await idbGetIcon(name);
+    const rec = await idbGetIcon(name)
     if (rec?.svgContent) {
-      memory.set(name, rec.svgContent);
-      return rec.svgContent;
+      memory.set(name, rec.svgContent)
+      return rec.svgContent
     }
     // L3 网络兜底
-    const res = await resolveIcon(name);
-    const svg = res.data?.data?.svgContent || "";
-    memory.set(name, svg);
-    await idbSetIcon(name, svg);
-    return svg;
-  })();
+    const res = await resolveIcon(name)
+    const svg = res.data?.data?.svgContent || ''
+    memory.set(name, svg)
+    await idbSetIcon(name, svg)
+    return svg
+  })()
 
-  pending.set(name, task);
+  pending.set(name, task)
   try {
-    return await task;
+    return await task
   } finally {
-    pending.delete(name);
+    pending.delete(name)
   }
 }
 
 /** A：单图标失效（内存 + IndexedDB） */
 export async function invalidate(name: string): Promise<void> {
-  if (!name) return;
-  memory.delete(name);
-  pending.delete(name);
-  await idbDeleteIcon(name);
+  if (!name) return
+  memory.delete(name)
+  pending.delete(name)
+  await idbDeleteIcon(name)
 }
 
 /** A：整库失效（批量增删时使用） */
 export async function invalidateAll(): Promise<void> {
-  memory.clear();
-  pending.clear();
-  await idbClearIcons();
+  memory.clear()
+  pending.clear()
+  await idbClearIcons()
 }
 
 /**
@@ -187,13 +182,13 @@ export async function invalidateAll(): Promise<void> {
  */
 export async function checkVersion(): Promise<void> {
   try {
-    const res = await getIconVersion();
-    const server = res.data?.data?.version;
-    if (typeof server !== "number") return;
-    const local = await metaGet(VERSION_KEY);
-    if (local !== null && local === server) return;
-    await invalidateAll();
-    await metaSet(VERSION_KEY, server);
+    const res = await getIconVersion()
+    const server = res.data?.data?.version
+    if (typeof server !== 'number') return
+    const local = await metaGet(VERSION_KEY)
+    if (local !== null && local === server) return
+    await invalidateAll()
+    await metaSet(VERSION_KEY, server)
   } catch {
     // 版本接口失败，跳过比对
   }
@@ -204,10 +199,10 @@ export async function checkVersion(): Promise<void> {
  */
 export async function refreshVersion(): Promise<void> {
   try {
-    const res = await getIconVersion();
-    const server = res.data?.data?.version;
-    if (typeof server === "number") {
-      await metaSet(VERSION_KEY, server);
+    const res = await getIconVersion()
+    const server = res.data?.data?.version
+    if (typeof server === 'number') {
+      await metaSet(VERSION_KEY, server)
     }
   } catch {
     // 忽略

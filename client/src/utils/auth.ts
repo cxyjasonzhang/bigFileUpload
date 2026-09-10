@@ -1,5 +1,5 @@
 // auth.ts - 登录态、token 管理、401 刷新拦截
-import { reactive } from "vue";
+import { reactive } from 'vue'
 import {
   request,
   setupAuthInterceptor,
@@ -7,69 +7,66 @@ import {
   type User,
   fetchUserRoutes,
   fetchUserPermissions,
-} from "./api";
+} from './api'
 
 // ─── access token 只存在内存中（不落盘） ──────────────────
-let accessToken: string | null = null;
+let accessToken: string | null = null
 
 // 当前用户信息（响应式）
 export interface AuthState {
-  user: User | null;
-  isLoggedIn: boolean;
+  user: User | null
+  isLoggedIn: boolean
 }
 
 export const authState = reactive<AuthState>({
   user: null,
   isLoggedIn: false,
-});
+})
 
 // ─── Token 读写（闭包保护，外部只有 get/set） ──────────────
 
 export function getAccessToken(): string | null {
-  return accessToken;
+  return accessToken
 }
 
 function setAccessToken(token: string) {
-  accessToken = token;
+  accessToken = token
 }
 
 function clearAccessToken() {
-  accessToken = null;
+  accessToken = null
 }
 
 // ─── 鉴权 API ─────────────────────────────────────────────
 
 export interface LoginResult {
-  access_token: string;
-  user: User;
+  access_token: string
+  user: User
 }
 
 /**
  * 登录
  * 服务端通过 HttpOnly Cookie 下发 refresh_token
  */
-export async function login(
-  username: string,
-  password: string,
-): Promise<LoginResult> {
-  const { data: res } = await request.post<ApiResponse<LoginResult>>(
-    "/auth/login",
-    { username, password },
-  );
-  if (res.code !== 0) throw new Error(res.msg);
+export async function login(username: string, password: string): Promise<LoginResult> {
+  const { data: res } = await request.post<ApiResponse<LoginResult>>('/auth/login', {
+    username,
+    password,
+  })
+  if (res.code !== 0) throw new Error(res.msg)
 
-  setAccessToken(res.data.access_token);
-  authState.user = res.data.user;
-  authState.isLoggedIn = true;
-  console.log("[DEBUG-logout] login() 完成：isLoggedIn 已置 true，user =", authState.user?.username);
+  setAccessToken(res.data.access_token)
+  authState.user = res.data.user
+  authState.isLoggedIn = true
+  console.log('[DEBUG-logout] login() 完成：isLoggedIn 已置 true，user =', authState.user?.username)
 
   // 登录成功后拉取动态菜单与权限（失败不阻断登录跳转）
   try {
-    await loadDynamicAccess();
+    await loadDynamicAccess()
   } catch (err) {
-    console.error("拉取动态菜单失败（不影响登录）:", err);
+    console.error('拉取动态菜单失败（不影响登录）:', err)
   }
-  return res.data;
+  return res.data
 }
 
 /**
@@ -77,52 +74,50 @@ export async function login(
  * 登录与刷新恢复时都会调用
  */
 export async function loadDynamicAccess(): Promise<void> {
-  const { usePermissionStore } = await import("@/stores/permission");
-  const { registerDynamicRoutes } = await import("@/router/dynamic");
-  const permission = usePermissionStore();
+  const { usePermissionStore } = await import('@/stores/permission')
+  const { registerDynamicRoutes } = await import('@/router/dynamic')
+  const permission = usePermissionStore()
 
   // 拉取权限点与角色
-  const permRes = await fetchUserPermissions();
+  const permRes = await fetchUserPermissions()
   if (permRes.data.code === 0) {
-    permission.setPermissions(permRes.data.data.perms, permRes.data.data.roles);
+    permission.setPermissions(permRes.data.data.perms, permRes.data.data.roles)
   }
 
   // 拉取动态菜单并组装树
-  const routeRes = await fetchUserRoutes();
+  const routeRes = await fetchUserRoutes()
   if (routeRes.data.code === 0) {
-    const list = routeRes.data.data.list;
-    console.log(list, 'list');
-    permission.setMenus(list);
+    const list = routeRes.data.data.list
+    console.log(list, 'list')
+    permission.setMenus(list)
     // 注册动态路由（幂等：重复调用会先清旧再注入）
-    registerDynamicRoutes(permission.menuTree);
-    permission.isRoutesLoaded = true;
+    registerDynamicRoutes(permission.menuTree)
+    permission.isRoutesLoaded = true
   }
 }
 
 // ─── 刷新并发锁 ──────────────────────────────────────────
-let isRefreshing = false;
+let isRefreshing = false
 let refreshSubscribers: Array<{
-  resolve: (token: string) => void;
-  reject: (err: unknown) => void;
-}> = [];
+  resolve: (token: string) => void
+  reject: (err: unknown) => void
+}> = []
 
 function subscribeRefresh(cb: {
-  resolve: (token: string) => void;
-  reject: (err: unknown) => void;
+  resolve: (token: string) => void
+  reject: (err: unknown) => void
 }) {
-  refreshSubscribers.push(cb);
+  refreshSubscribers.push(cb)
 }
 
 /** 真正发起一次刷新请求 */
 async function doRefreshInternal(): Promise<string> {
-  const { data: res } = await request.post<ApiResponse<LoginResult>>(
-    "/auth/refresh",
-  );
+  const { data: res } = await request.post<ApiResponse<LoginResult>>('/auth/refresh')
   if (res.code !== 0) {
-    throw new Error(res.msg || "刷新失败");
+    throw new Error(res.msg || '刷新失败')
   }
-  setAccessToken(res.data.access_token);
-  return res.data.access_token;
+  setAccessToken(res.data.access_token)
+  return res.data.access_token
 }
 
 /**
@@ -133,41 +128,41 @@ export async function refreshAccessToken(): Promise<string> {
   if (isRefreshing) {
     // 已有刷新在飞，排队等结果即可
     return new Promise<string>((resolve, reject) => {
-      subscribeRefresh({ resolve, reject });
-    });
+      subscribeRefresh({ resolve, reject })
+    })
   }
 
-  isRefreshing = true;
+  isRefreshing = true
   try {
-    const token = await doRefreshInternal();
-    refreshSubscribers.forEach((s) => s.resolve(token));
-    return token;
+    const token = await doRefreshInternal()
+    refreshSubscribers.forEach((s) => s.resolve(token))
+    return token
   } catch (err) {
-    refreshSubscribers.forEach((s) => s.reject(err));
-    throw err;
+    refreshSubscribers.forEach((s) => s.reject(err))
+    throw err
   } finally {
-    refreshSubscribers = [];
-    isRefreshing = false;
+    refreshSubscribers = []
+    isRefreshing = false
   }
 }
 
 /** 登出 */
 export async function logout(): Promise<void> {
-  console.log("[DEBUG-logout] logout() 进入，当前 isLoggedIn =", authState.isLoggedIn);
+  console.log('[DEBUG-logout] logout() 进入，当前 isLoggedIn =', authState.isLoggedIn)
   try {
-    await request.post("/auth/logout");
-    console.log("[DEBUG-logout] logout 接口已返回 200");
+    await request.post('/auth/logout')
+    console.log('[DEBUG-logout] logout 接口已返回 200')
   } catch (err) {
-    console.warn("[DEBUG-logout] logout 接口异常（将被忽略）:", err);
+    console.warn('[DEBUG-logout] logout 接口异常（将被忽略）:', err)
   }
-  clearAccessToken();
-  authState.user = null;
-  authState.isLoggedIn = false;
-  console.log("[DEBUG-logout] logout() 本地状态已清理：isLoggedIn = false");
+  clearAccessToken()
+  authState.user = null
+  authState.isLoggedIn = false
+  console.log('[DEBUG-logout] logout() 本地状态已清理：isLoggedIn = false')
   // 清空权限状态
-  const { usePermissionStore } = await import("@/stores/permission");
-  usePermissionStore().reset();
-  console.log("[DEBUG-logout] logout() 权限 store 已 reset，函数即将返回");
+  const { usePermissionStore } = await import('@/stores/permission')
+  usePermissionStore().reset()
+  console.log('[DEBUG-logout] logout() 权限 store 已 reset，函数即将返回')
 }
 
 /**
@@ -176,32 +171,32 @@ export async function logout(): Promise<void> {
  */
 export async function initAuth(): Promise<boolean> {
   try {
-    await refreshAccessToken();
-    const { data: res } = await request.get<ApiResponse<{ user: User }>>(
-      "/auth/me",
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      },
-    );
+    await refreshAccessToken()
+    const { data: res } = await request.get<ApiResponse<{ user: User }>>('/auth/me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
     if (res.code === 0 && res.data.user) {
-      authState.user = res.data.user;
-      authState.isLoggedIn = true;
-      console.log("[DEBUG-logout] initAuth() 恢复成功：isLoggedIn 已置 true，user =", authState.user?.username);
+      authState.user = res.data.user
+      authState.isLoggedIn = true
+      console.log(
+        '[DEBUG-logout] initAuth() 恢复成功：isLoggedIn 已置 true，user =',
+        authState.user?.username,
+      )
       // 恢复登录态后拉取动态菜单与权限（失败不阻断恢复）
       try {
-        await loadDynamicAccess();
+        await loadDynamicAccess()
       } catch (err) {
-        console.error("恢复登录态时拉取动态菜单失败:", err);
+        console.error('恢复登录态时拉取动态菜单失败:', err)
       }
-      return true;
+      return true
     }
   } catch {
     /* 无法自动恢复，需重新登录 */
   }
-  clearAccessToken();
-  authState.user = null;
-  authState.isLoggedIn = false;
-  return false;
+  clearAccessToken()
+  authState.user = null
+  authState.isLoggedIn = false
+  return false
 }
 
 /** 安装认证拦截器（在 main.ts 中调用一次） */
@@ -210,10 +205,10 @@ export function setupAuth(): void {
     getToken: getAccessToken,
     doRefresh: refreshAccessToken,
     onAuthFailed: () => {
-      console.warn("[DEBUG-logout] 拦截器 onAuthFailed 触发（refresh 失败）：本地状态将被清理");
-      clearAccessToken();
-      authState.user = null;
-      authState.isLoggedIn = false;
+      console.warn('[DEBUG-logout] 拦截器 onAuthFailed 触发（refresh 失败）：本地状态将被清理')
+      clearAccessToken()
+      authState.user = null
+      authState.isLoggedIn = false
     },
-  });
+  })
 }
