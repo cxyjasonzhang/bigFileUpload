@@ -1,10 +1,13 @@
 <template>
-  <span v-show="svgContent" class="svg-icon" :style="iconStyle" v-html="svgContent" />
+  <!-- 图标内容来自服务端 / IndexedDB，已由 DOMPurify 清洗后再渲染，无 XSS 风险 -->
+  <!-- eslint-disable-next-line vue/no-v-html -->
+  <span v-show="sanitizedSvg" class="svg-icon" :style="iconStyle" v-html="sanitizedSvg" />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { get as getCachedIcon } from '@/utils/iconCache'
+import { sanitizeSvg } from '@/utils/sanitize'
 defineOptions({ name: 'SvgIcon' })
 
 /**
@@ -27,6 +30,13 @@ const props = withDefaults(
 )
 
 const svgContent = ref('')
+
+/**
+ * 经 DOMPurify 清洗后的 SVG 内容。
+ * SVG 片段来自服务端 / IndexedDB，属于不可信来源，直接塞进 v-html 存在 XSS 风险；
+ * 统一走 utils/sanitize 清洗后再交给 v-html 渲染。
+ */
+const sanitizedSvg = computed(() => sanitizeSvg(svgContent.value))
 
 // 监听 name 变化重新加载（三级缓存：内存 → IndexedDB → 网络）
 watch(() => props.name, fetchIcon, { immediate: true })

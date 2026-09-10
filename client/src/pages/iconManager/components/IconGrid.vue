@@ -15,9 +15,15 @@
 
     <!-- 图标网格 -->
     <div v-if="!loading && icons.length > 0" class="icon-grid">
-      <div v-for="icon of icons" :key="icon.id" class="icon-card" @click="handleCardClick(icon)">
-        <!-- SVG 预览 -->
-        <div class="icon-preview" v-html="icon.svgContent" />
+      <div
+        v-for="icon of sanitizedIcons"
+        :key="icon.id"
+        class="icon-card"
+        @click="handleCardClick(icon)"
+      >
+        <!-- SVG 预览（内容已由 DOMPurify 清洗，无 XSS 风险） -->
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <div class="icon-preview" v-html="icon.safeSvgContent" />
         <!-- 名称 -->
         <div class="icon-name" :title="icon.name">{{ icon.name }}</div>
         <!-- 灰色半透明遮罩 -->
@@ -72,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import {
   Search,
   Upload,
@@ -82,6 +88,7 @@ import {
   CopyDocument,
   Download,
 } from '@element-plus/icons-vue'
+import { sanitizeSvg } from '@/utils/sanitize'
 
 const props = defineProps<{
   icons: any[]
@@ -90,6 +97,15 @@ const props = defineProps<{
   pageSize: number
   total: number
 }>()
+
+/**
+ * 预清洗图标列表：SVG 内容来自服务端，属于不可信来源，
+ * 统一经 DOMPurify 清洗后再交给 v-html 渲染。
+ * 用 computed 而非在模板中逐个调用，避免每次重渲染重复清洗。
+ */
+const sanitizedIcons = computed(() =>
+  props.icons.map((icon) => ({ ...icon, safeSvgContent: sanitizeSvg(icon.svgContent) })),
+)
 
 // 可选每页条数
 const pageSizeOptions = [10, 20, 50]

@@ -29,7 +29,9 @@
         </el-form-item>
         <el-form-item label="预览">
           <div class="preview-row">
-            <div class="preview-box" v-html="editForm.svgContent" />
+            <!-- 内容已由 DOMPurify 清洗，无 XSS 风险 -->
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <div class="preview-box" v-html="sanitizeSvg(editForm.svgContent)" />
             <div class="preview-actions">
               <el-button
                 size="small"
@@ -109,7 +111,9 @@
       <!-- 预览区域 -->
       <div v-if="previewSvg" class="preview-section">
         <div class="preview-title">预览：{{ previewName }}</div>
-        <div class="preview-box" v-html="previewSvg" />
+        <!-- 内容已由 DOMPurify 清洗，无 XSS 风险 -->
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <div class="preview-box" v-html="sanitizeSvg(previewSvg)" />
       </div>
     </template>
 
@@ -139,6 +143,7 @@ import {
 } from '@element-plus/icons-vue'
 import DraggableDialog from '@/components/DraggableDialog.vue'
 import { updateIcon, batchCreateIcons, getIconNames, type IconInput } from '@/utils/api'
+import { sanitizeSvg } from '@/utils/sanitize'
 
 const props = withDefaults(
   defineProps<{

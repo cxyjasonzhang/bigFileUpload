@@ -2,12 +2,15 @@
 <!-- 图片地址 https://iconpark.oceanengine.com/illustrations/13 -->
 <template>
   <div class="theme-svg" :style="sizeStyle">
-    <div v-if="src" class="svg-container" v-html="svgContent"></div>
+    <!-- 内容已由 DOMPurify 清洗，无 XSS 风险 -->
+    <!-- eslint-disable-next-line vue/no-v-html -->
+    <div v-if="src" class="svg-container" v-html="safeSvgContent"></div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watchEffect } from 'vue'
+import { sanitizeSvg } from '@/utils/sanitize'
 
 interface Props {
   size?: string | number
@@ -21,6 +24,9 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const svgContent = ref('')
+
+// 经 DOMPurify 清洗后的 SVG 内容，供 v-html 安全渲染
+const safeSvgContent = computed(() => sanitizeSvg(svgContent.value))
 
 // 计算样式
 const sizeStyle = computed(() => {
