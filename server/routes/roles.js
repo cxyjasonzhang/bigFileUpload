@@ -3,7 +3,7 @@
 const express = require("express");
 const { authMiddleware } = require("../middleware/auth");
 const { getRoleList, insertRole, updateRole, deleteRole } = require("../db/roleApi");
-const { getRoleMenuIds, saveRoleMenus, getAllMenus } = require("../db/rbacApi");
+const { getRoleMenuIds, saveRoleMenus, getAllMenus, getAllRoles } = require("../db/rbacApi");
 
 const router = express.Router();
 
@@ -177,6 +177,20 @@ router.put("/:id/menus", async (req, res) => {
     res.json({ code: 0, msg: "保存授权成功" });
   } catch (err) {
     console.error("保存角色授权失败:", err);
+    res.status(500).json({ code: -1, msg: "服务器内部错误，请稍后重试" });
+  }
+});
+
+/**
+ * 查询全量可用角色（用户分配角色的下拉选项，过滤超级管理员 + 仅启用）
+ * GET /roles/all
+ */
+router.get("/all", async (req, res) => {
+  try {
+    const list = await getAllRoles();
+    res.json({ code: 0, data: { list } });
+  } catch (err) {
+    console.error("查询角色列表失败:", err);
     res.status(500).json({ code: -1, msg: "服务器内部错误，请稍后重试" });
   }
 });

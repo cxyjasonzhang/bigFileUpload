@@ -230,6 +230,72 @@ const updateUserProfile = (
   });
 };
 
+/**
+ * 查询用户的角色 id 集合（用户管理分配角色回显用）
+ * @param {number} userId 用户 ID
+ * @returns {Promise<Array<number>>}
+ */
+const getUserRoleIds = (userId) => {
+  return new Promise((resolve, reject) => {
+    connection.query(
+      `SELECT role_id AS roleId FROM sys_user_role WHERE user_id = ?`,
+      [userId],
+      (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows.map((r) => r.roleId));
+      }
+    );
+  });
+};
+
+/**
+ * 保存用户角色（全量覆盖，但强制保留已有 R_SUPER）
+ * @param {number} userId 用户 ID
+ * @param {Array<number>} roleIds 新的角色 id 集合
+ */
+const saveUserRoles = async (userId, roleIds) => {
+  // 保留用户已有的超级管理员角色：R_SUPER 不参与分配，避免被误清
+  const superRows = await query(
+    `SELECT r.role_id AS roleId FROM \`role\` r
+     JOIN sys_user_role ur ON ur.role_id = r.role_id
+     WHERE ur.user_id = ? AND r.role_code = ? LIMIT 1`,
+    [userId, SUPER_ROLE_CODE]
+  );
+
+  const finalRoleIds = Array.isArray(roleIds) ? [...roleIds] : [];
+  if (superRows.length && !finalRoleIds.includes(superRows[0].roleId)) {
+    finalRoleIds.push(superRows[0].roleId);
+  }
+
+  await query("DELETE FROM sys_user_role WHERE user_id = ?", [userId]);
+  for (const roleId of finalRoleIds) {
+    await query(
+      "INSERT IGNORE INTO sys_user_role (user_id, role_id) VALUES (?, ?)",
+      [userId, roleId]
+    );
+  }
+};
+
+/**
+ * 查询全量可用角色（分配角色弹窗选项，过滤超级管理员 + 仅启用）
+ * @returns {Promise<Array>}
+ */
+const getAllRoles = () => {
+  return new Promise((resolve, reject) => {
+    connection.query(
+      `SELECT role_id AS roleId, role_name AS roleName, role_code AS roleCode, description, enabled
+       FROM \`role\`
+       WHERE role_code <> ? AND enabled = 1
+       ORDER BY role_id ASC`,
+      [SUPER_ROLE_CODE],
+      (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows);
+      }
+    );
+  });
+};
+
 module.exports = {
   SUPER_ROLE_CODE,
   getUserByAccount,
@@ -241,4 +307,7 @@ module.exports = {
   saveRoleMenus,
   getUserProfile,
   updateUserProfile,
+  getUserRoleIds,
+  saveUserRoles,
+  getAllRoles,
 };

@@ -53,6 +53,21 @@
         @pagination:size-change="handleSizeChange"
         @pagination:current-change="handleCurrentChange"
       >
+        <!-- 角色列 -->
+        <template #roles="{ row }">
+          <div class="flex" style="gap: 4px; flex-wrap: wrap">
+            <ElTag
+              v-for="(role, idx) in row.roles || []"
+              :key="idx"
+              size="small"
+              :type="role === '超级管理员' ? 'danger' : 'primary'"
+            >
+              {{ role }}
+            </ElTag>
+            <span v-if="!row.roles || row.roles.length === 0" style="color: #999">-</span>
+          </div>
+        </template>
+
         <!-- 操作列 -->
         <template #operation="{ row }">
           <div class="flex">
@@ -220,6 +235,12 @@ const {
         prop: 'workLocation',
         label: '工作地点',
         minWidth: 180,
+      },
+      {
+        prop: 'roles',
+        label: '角色',
+        minWidth: 160,
+        useSlot: true,
       },
       {
         prop: 'operation',

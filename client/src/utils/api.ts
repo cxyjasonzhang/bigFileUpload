@@ -31,6 +31,8 @@ export interface User {
   phone?: string
   homeAddress?: string
   workLocation?: string
+  /** 用户拥有的角色名（列表「角色」列展示） */
+  roles?: string[]
   [key: string]: unknown
 }
 
@@ -242,18 +244,30 @@ export function fetchUsers(params: UserQuery = {}) {
 }
 
 /** 新建用户 */
-export function createUser(data: Partial<User> & { username: string; phone: string }) {
+export function createUser(
+  data: Partial<User> & { username: string; phone: string; roleIds?: number[] },
+) {
   return request.post<ApiResponse<unknown>>('/users', data)
 }
 
 /** 编辑用户 */
-export function updateUser(id: number, data: Partial<User>) {
+export function updateUser(id: number, data: Partial<User> & { roleIds?: number[] }) {
   return request.put<ApiResponse<unknown>>(`/users/${id}`, data)
 }
 
 /** 删除用户 */
 export function deleteUser(id: number) {
   return request.delete<ApiResponse<unknown>>(`/users/${id}`)
+}
+
+/** 获取全量可用角色（用户分配角色选项，不含超级管理员） */
+export function fetchAllRoles() {
+  return request.get<ApiResponse<{ list: RoleItem[] }>>('/roles/all')
+}
+
+/** 获取用户已分配的角色 id 集合 */
+export function fetchUserRoles(userId: number) {
+  return request.get<ApiResponse<{ roleIds: number[] }>>(`/users/${userId}/roles`)
 }
 
 // ─── 个人中心接口 ─────────────────────────────────────────

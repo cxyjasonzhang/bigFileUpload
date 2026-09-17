@@ -63,7 +63,6 @@ const { menuTree } = storeToRefs(permission)
 
 // 菜单点击 → 路由导航（菜单项的 index 即路由 path）
 function handleSelect(index: string) {
-  console.log('[DEBUG-nav] 侧边栏菜单点击:', index)
   if (index.startsWith('/')) {
     router.push(index)
   }

@@ -76,34 +76,18 @@ const router = createRouter({
 // ─── 鉴权守卫：未登录访问受保护路由 → 重定向 /login 并携带回跳地址 ───
 router.beforeEach((to) => {
   const isPublic = Boolean(to.meta.public)
-  console.log('[DEBUG-nav] beforeEach:', {
-    from: router.currentRoute.value.fullPath,
-    to: to.fullPath,
-    isLoggedIn: authState.isLoggedIn,
-    isPublic,
-    matched: to.matched.map((m) => m.name ?? m.path),
-  })
   // 已登录还想去 /login → 直接进工作台
   if (to.path === '/login' && authState.isLoggedIn) {
-    console.warn('[DEBUG-logout] 守卫拦截：已登录访问 /login → 弹回 workbench', {
-      from: router.currentRoute.value.fullPath,
-      to: to.fullPath,
-    })
     return { path: '/workbench' }
   }
   if (!isPublic && !authState.isLoggedIn) {
-    console.log('[DEBUG-logout] 守卫放行到登录页：未登录访问受保护路由', to.fullPath)
     return { path: '/login', query: { redirect: to.fullPath } }
-  }
-  if (to.path === '/login') {
-    console.log('[DEBUG-logout] 守卫放行：访问 /login（isLoggedIn = false）')
   }
   return true
 })
 
 // ─── 导航完成后：把当前受保护路由补入「已访问列表」（去重）───
 router.afterEach((to) => {
-  console.log('[DEBUG-nav] afterEach:', { to: to.fullPath, name: to.name })
   if (to.meta.public) return
   const layout = useLayoutStore()
   layout.addVisited({

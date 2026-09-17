@@ -92,7 +92,32 @@ const getUserList = ({ username, phone, page, pageSize }) => {
 
       connection.query(dataSQL, dataParams, (err, list) => {
         if (err) return reject(err);
-        resolve({ list, total });
+
+        // 3. 批量联查这些用户的角色（供列表「角色」列展示）
+        const userIds = list.map((u) => u.id);
+        if (userIds.length === 0) {
+          resolve({ list, total });
+          return;
+        }
+        connection.query(
+          `SELECT ur.user_id AS userId, r.role_name AS roleName, r.role_code AS roleCode
+           FROM sys_user_role ur
+           JOIN \`role\` r ON r.role_id = ur.role_id
+           WHERE ur.user_id IN (?)`,
+          [userIds],
+          (roleErr, roleRows) => {
+            if (roleErr) return reject(roleErr);
+            const roleMap = {};
+            roleRows.forEach((row) => {
+              if (!roleMap[row.userId]) roleMap[row.userId] = [];
+              roleMap[row.userId].push(row.roleName);
+            });
+            list.forEach((u) => {
+              u.roles = roleMap[u.id] || [];
+            });
+            resolve({ list, total });
+          }
+        );
       });
     });
   });

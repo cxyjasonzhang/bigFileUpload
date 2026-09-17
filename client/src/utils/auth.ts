@@ -58,7 +58,6 @@ export async function login(username: string, password: string): Promise<LoginRe
   setAccessToken(res.data.access_token)
   authState.user = res.data.user
   authState.isLoggedIn = true
-  console.log('[DEBUG-logout] login() 完成：isLoggedIn 已置 true，user =', authState.user?.username)
 
   // 登录成功后拉取动态菜单与权限（失败不阻断登录跳转）
   try {
@@ -78,27 +77,20 @@ export async function loadDynamicAccess(): Promise<void> {
   const { registerDynamicRoutes } = await import('@/router/dynamic')
   const permission = usePermissionStore()
 
-  console.log('[DEBUG-nav] loadDynamicAccess 开始')
-
   // 拉取权限点与角色
   const permRes = await fetchUserPermissions()
   if (permRes.data.code === 0) {
     permission.setPermissions(permRes.data.data.perms, permRes.data.data.roles)
   }
-  console.log('[DEBUG-nav] permissions code =', permRes.data.code)
 
   // 拉取动态菜单并组装树
   const routeRes = await fetchUserRoutes()
   if (routeRes.data.code === 0) {
     const list = routeRes.data.data.list
-    console.log('[DEBUG-nav] routes code =', routeRes.data.code, '菜单数 =', list?.length)
     permission.setMenus(list)
     // 注册动态路由（幂等：重复调用会先清旧再注入）
     registerDynamicRoutes(permission.menuTree)
     permission.isRoutesLoaded = true
-    console.log('[DEBUG-nav] 动态路由注册完成')
-  } else {
-    console.log('[DEBUG-nav] routes code 异常 =', routeRes.data.code, routeRes.data.msg)
   }
 }
 
@@ -154,21 +146,22 @@ export async function refreshAccessToken(): Promise<string> {
 
 /** 登出 */
 export async function logout(): Promise<void> {
-  console.log('[DEBUG-logout] logout() 进入，当前 isLoggedIn =', authState.isLoggedIn)
   try {
     await request.post('/auth/logout')
-    console.log('[DEBUG-logout] logout 接口已返回 200')
   } catch (err) {
-    console.warn('[DEBUG-logout] logout 接口异常（将被忽略）:', err)
+    console.warn('登出接口异常（将被忽略）:', err)
   }
   clearAccessToken()
   authState.user = null
   authState.isLoggedIn = false
-  console.log('[DEBUG-logout] logout() 本地状态已清理：isLoggedIn = false')
   // 清空权限状态
   const { usePermissionStore } = await import('@/stores/permission')
   usePermissionStore().reset()
-  console.log('[DEBUG-logout] logout() 权限 store 已 reset，函数即将返回')
+  // 清空动态路由与历史 Tab，防止跨用户残留（越权访问）
+  const { clearDynamicRoutes } = await import('@/router/dynamic')
+  clearDynamicRoutes()
+  const { useLayoutStore } = await import('@/stores/layout')
+  useLayoutStore().resetVisited()
 }
 
 /**
@@ -184,10 +177,6 @@ export async function initAuth(): Promise<boolean> {
     if (res.code === 0 && res.data.user) {
       authState.user = res.data.user
       authState.isLoggedIn = true
-      console.log(
-        '[DEBUG-logout] initAuth() 恢复成功：isLoggedIn 已置 true，user =',
-        authState.user?.username,
-      )
       // 恢复登录态后拉取动态菜单与权限（失败不阻断恢复）
       try {
         await loadDynamicAccess()
@@ -196,9 +185,8 @@ export async function initAuth(): Promise<boolean> {
       }
       return true
     }
-  } catch (err) {
+  } catch {
     /* 无法自动恢复，需重新登录 */
-    console.log('[DEBUG-nav] initAuth 恢复失败:', err)
   }
   clearAccessToken()
   authState.user = null
@@ -212,7 +200,6 @@ export function setupAuth(): void {
     getToken: getAccessToken,
     doRefresh: refreshAccessToken,
     onAuthFailed: () => {
-      console.warn('[DEBUG-logout] 拦截器 onAuthFailed 触发（refresh 失败）：本地状态将被清理')
       clearAccessToken()
       authState.user = null
       authState.isLoggedIn = false

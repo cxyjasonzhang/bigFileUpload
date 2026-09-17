@@ -111,6 +111,11 @@ export const useLayoutStore = defineStore(
       visitedRoutes.value = visitedRoutes.value.filter((v) => v.pinned)
     }
 
+    /** 重置已访问路由（退出登录时调用，清空为仅保留固定工作台） */
+    function resetVisited() {
+      visitedRoutes.value = [{ ...WORKBENCH }]
+    }
+
     // 决策 10：窄屏（<768px）自动收起侧栏；宽屏不强制展开，保留用户显式选择
     function initLayout() {
       const mql = window.matchMedia('(max-width: 768px)')
@@ -140,6 +145,7 @@ export const useLayoutStore = defineStore(
       closeRightVisited,
       closeOtherVisited,
       closeAllVisited,
+      resetVisited,
       initLayout,
     }
   },

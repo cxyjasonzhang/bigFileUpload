@@ -92,26 +92,39 @@ function menuToRoutes(menus: MenuTree[]): RouteRecordRaw[] {
  * 注册动态路由：清空布局壳子路由后重新注入
  * @param menuTree 当前用户的菜单树
  */
+// 记录当前已注册的动态路由名（用于退出登录 / 重新注册时全量清除，防止跨用户残留）
+let registeredRouteNames: string[] = []
+
+/**
+ * 清除所有动态注册的路由（退出登录 / 重新注册前调用）
+ */
+export function clearDynamicRoutes() {
+  registeredRouteNames.forEach((name) => {
+    if (router.hasRoute(name)) {
+      router.removeRoute(name)
+    }
+  })
+  registeredRouteNames = []
+}
+
+/**
+ * 注册动态路由：先清空旧路由，再注入当前用户菜单对应的路由
+ * @param menuTree 当前用户的菜单树
+ */
 export function registerDynamicRoutes(menuTree: MenuTree[]) {
   const layoutRoute = router.getRoutes().find((r) => r.name === 'Layout')
   if (!layoutRoute) {
-    console.log('[DEBUG-nav] registerDynamicRoutes: 未找到 Layout 路由，动态路由注册失败！')
     return
   }
 
-  // 移除旧的动态子路由
+  // 先清除上一次注册的动态路由，避免残留（如切换用户后超管路由未清）
+  clearDynamicRoutes()
+
   const childRoutes = menuToRoutes(menuTree)
-  console.log(
-    '[DEBUG-nav] registerDynamicRoutes 注册路由:',
-    JSON.stringify(childRoutes.map((r) => ({ name: r.name, path: r.path }))),
-  )
   // addRoute 到布局壳（name 为 "Layout" 的父路由）
   childRoutes.forEach((child) => {
-    // 同名路由先移除再添加，避免重复
-    if (router.hasRoute(child.name as string)) {
-      router.removeRoute(child.name as string)
-    }
     router.addRoute('Layout', child)
+    registeredRouteNames.push(child.name as string)
   })
 }
 

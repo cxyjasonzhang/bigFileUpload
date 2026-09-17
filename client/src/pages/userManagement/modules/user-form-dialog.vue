@@ -20,6 +20,22 @@
       <ElFormItem label="工作地点" prop="workLocation">
         <ElInput v-model="form.workLocation" placeholder="请输入工作地点" maxlength="100" />
       </ElFormItem>
+      <ElFormItem label="角色" prop="roleIds">
+        <ElSelect
+          v-model="form.roleIds"
+          multiple
+          clearable
+          placeholder="请选择角色（可不选）"
+          style="width: 100%"
+        >
+          <ElOption
+            v-for="role in roleOptions"
+            :key="role.roleId"
+            :label="role.roleName"
+            :value="role.roleId"
+          />
+        </ElSelect>
+      </ElFormItem>
     </ElForm>
     <template #footer>
       <ElButton @click="handleClose">取消</ElButton>
@@ -32,8 +48,8 @@
 import { ref, reactive, computed, watch } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import DraggableDialog from '@/components/DraggableDialog.vue'
-import { createUser, updateUser } from '@/utils/api'
-import type { User } from '@/utils/api'
+import { createUser, updateUser, fetchAllRoles, fetchUserRoles } from '@/utils/api'
+import type { User, RoleItem } from '@/utils/api'
 
 interface Props {
   modelValue: boolean
@@ -83,13 +99,17 @@ const rules = reactive<FormRules>({
 /**
  * 表单数据
  */
-const form = reactive<User>({
+const form = reactive<User & { roleIds: number[] }>({
   id: 0,
   username: '',
   phone: '',
   homeAddress: '',
   workLocation: '',
+  roleIds: [],
 })
+
+// 角色选项（全量可用角色，后端已过滤超级管理员）
+const roleOptions = ref<RoleItem[]>([])
 
 /**
  * 监听弹窗打开，初始化表单数据
@@ -113,10 +133,45 @@ watch(
 )
 
 /**
+ * 加载全量可用角色选项（仅首次加载）
+ */
+async function loadRoleOptions() {
+  try {
+    const res = await fetchAllRoles()
+    if (res.data.code === 0) {
+      roleOptions.value = res.data.data.list
+    }
+  } catch {
+    roleOptions.value = []
+  }
+}
+
+/**
+ * 加载用户已有角色 id 集合（编辑回显）
+ * @param userId 用户 ID
+ */
+async function loadUserRoles(userId: number): Promise<number[]> {
+  try {
+    const res = await fetchUserRoles(userId)
+    if (res.data.code === 0) {
+      return res.data.data.roleIds
+    }
+  } catch {
+    // 加载失败按无角色处理
+  }
+  return []
+}
+
+/**
  * 初始化表单数据
  * 根据弹窗类型填充表单或重置表单
  */
-const initForm = () => {
+const initForm = async () => {
+  // 角色选项只加载一次
+  if (roleOptions.value.length === 0) {
+    await loadRoleOptions()
+  }
+
   if (props.dialogType === 'edit' && props.userData) {
     Object.assign(form, {
       id: props.userData.id,
@@ -125,6 +180,8 @@ const initForm = () => {
       homeAddress: props.userData.homeAddress || '',
       workLocation: props.userData.workLocation || '',
     })
+    // 编辑时回显用户已有角色
+    form.roleIds = await loadUserRoles(props.userData.id)
   } else {
     Object.assign(form, {
       id: 0,
@@ -132,6 +189,7 @@ const initForm = () => {
       phone: '',
       homeAddress: '',
       workLocation: '',
+      roleIds: [],
     })
   }
 }
@@ -167,6 +225,7 @@ const handleSubmit = async () => {
       phone: form.phone || '',
       homeAddress: form.homeAddress,
       workLocation: form.workLocation,
+      roleIds: form.roleIds,
     }
 
     if (props.dialogType === 'add') {

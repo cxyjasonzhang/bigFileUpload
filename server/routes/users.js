@@ -3,6 +3,7 @@
 const express = require("express")
 const { authMiddleware } = require("../middleware/auth")
 const { getUserList, insertUser, updateUser, deleteUser } = require("../db/api")
+const { getUserRoleIds, saveUserRoles } = require("../db/rbacApi")
 
 const router = express.Router()
 
@@ -45,7 +46,7 @@ router.get("/", async (req, res) => {
  */
 router.post("/", async (req, res) => {
   try {
-    const { username, phone, homeAddress = "", workLocation = "" } = req.body
+    const { username, phone, homeAddress = "", workLocation = "", roleIds = [] } = req.body
 
     if (!username || !username.trim()) {
       return res.status(400).json({ code: -1, msg: "姓名不能为空" })
@@ -57,12 +58,17 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ code: -1, msg: "手机号格式不正确" })
     }
 
-    await insertUser({
+    const result = await insertUser({
       username: username.trim(),
       phone: phone.trim(),
       homeAddress: homeAddress.trim(),
       workLocation: workLocation.trim(),
     })
+
+    // 保存用户角色（若有选择）
+    if (result.insertId && Array.isArray(roleIds) && roleIds.length) {
+      await saveUserRoles(result.insertId, roleIds)
+    }
 
     res.json({ code: 0, msg: "新建用户成功" })
   } catch (err) {
@@ -80,7 +86,7 @@ router.put("/:id", async (req, res) => {
     const id = parseInt(req.params.id, 10)
     if (!id) return res.status(400).json({ code: -1, msg: "用户ID不合法" })
 
-    const { username, phone, homeAddress = "", workLocation = "" } = req.body
+    const { username, phone, homeAddress = "", workLocation = "", roleIds = [] } = req.body
 
     if (!username || !username.trim()) {
       return res.status(400).json({ code: -1, msg: "姓名不能为空" })
@@ -99,9 +105,31 @@ router.put("/:id", async (req, res) => {
       workLocation: workLocation.trim(),
     })
 
+    // 保存用户角色（全量覆盖；saveUserRoles 内部会强制保留已有 R_SUPER）
+    if (Array.isArray(roleIds)) {
+      await saveUserRoles(id, roleIds)
+    }
+
     res.json({ code: 0, msg: "编辑用户成功" })
   } catch (err) {
     console.error("编辑用户失败:", err)
+    res.status(500).json({ code: -1, msg: "服务器内部错误，请稍后重试" })
+  }
+})
+
+/**
+ * 查询用户的角色 id 集合（编辑用户弹窗回显）
+ * GET /users/:id/roles
+ */
+router.get("/:id/roles", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10)
+    if (!id) return res.status(400).json({ code: -1, msg: "用户ID不合法" })
+
+    const roleIds = await getUserRoleIds(id)
+    res.json({ code: 0, data: { roleIds } })
+  } catch (err) {
+    console.error("查询用户角色失败:", err)
     res.status(500).json({ code: -1, msg: "服务器内部错误，请稍后重试" })
   }
 })

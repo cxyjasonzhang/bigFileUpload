@@ -84,19 +84,11 @@ function toggleFullscreen() {
 async function handleCommand(cmd: string) {
   if (cmd === 'logout') {
     await logout()
-    console.log(
-      '[DEBUG-logout] handleCommand：logout() 已返回，当前 isLoggedIn =',
-      authState.isLoggedIn,
-    )
     ElMessage.success('已退出登录')
     try {
       await router.push('/login')
-      console.log(
-        "[DEBUG-logout] push('/login') 已结束，当前路由 =",
-        router.currentRoute.value.fullPath,
-      )
     } catch (navErr) {
-      console.warn("[DEBUG-logout] push('/login') 被中断/失败:", navErr)
+      console.warn('跳转登录页失败:', navErr)
     }
   } else if (cmd === 'profile') {
     router.push('/profile')
