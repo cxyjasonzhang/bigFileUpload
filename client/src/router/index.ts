@@ -51,6 +51,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/workbench/index.vue'),
         meta: { title: '工作台' },
       },
+      {
+        path: '/profile',
+        name: 'Profile',
+        component: () => import('@/pages/profile/index.vue'),
+        meta: { title: '个人中心' },
+      },
     ],
   },
   // 兜底：未知路径 → 404（动态路由未覆盖到的地址都落到这里）
@@ -70,6 +76,13 @@ const router = createRouter({
 // ─── 鉴权守卫：未登录访问受保护路由 → 重定向 /login 并携带回跳地址 ───
 router.beforeEach((to) => {
   const isPublic = Boolean(to.meta.public)
+  console.log('[DEBUG-nav] beforeEach:', {
+    from: router.currentRoute.value.fullPath,
+    to: to.fullPath,
+    isLoggedIn: authState.isLoggedIn,
+    isPublic,
+    matched: to.matched.map((m) => m.name ?? m.path),
+  })
   // 已登录还想去 /login → 直接进工作台
   if (to.path === '/login' && authState.isLoggedIn) {
     console.warn('[DEBUG-logout] 守卫拦截：已登录访问 /login → 弹回 workbench', {
@@ -90,6 +103,7 @@ router.beforeEach((to) => {
 
 // ─── 导航完成后：把当前受保护路由补入「已访问列表」（去重）───
 router.afterEach((to) => {
+  console.log('[DEBUG-nav] afterEach:', { to: to.fullPath, name: to.name })
   if (to.meta.public) return
   const layout = useLayoutStore()
   layout.addVisited({

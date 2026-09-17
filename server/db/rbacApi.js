@@ -177,6 +177,59 @@ const saveRoleMenus = async (roleId, menuIds) => {
   }
 };
 
+/**
+ * 查询当前用户的个人资料（个人中心）
+ * @param {number} userId 用户 ID
+ * @returns {Promise<object|null>}
+ */
+const getUserProfile = (userId) => {
+  return new Promise((resolve, reject) => {
+    connection.query(
+      `SELECT id, username, nickname, gender, email, phone,
+              home_address AS homeAddress, bio
+       FROM \`user\`
+       WHERE id = ? LIMIT 1`,
+      [userId],
+      (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows[0] || null);
+      }
+    );
+  });
+};
+
+/**
+ * 更新当前用户的个人资料（个人中心，不含 account/password 登录凭证）
+ * @param {number} userId 用户 ID
+ * @param {object} param - { username, nickname, gender, email, phone, homeAddress, bio }
+ */
+const updateUserProfile = (
+  userId,
+  { username, nickname, gender, email, phone, homeAddress, bio }
+) => {
+  return new Promise((resolve, reject) => {
+    connection.query(
+      `UPDATE \`user\`
+       SET username = ?, nickname = ?, gender = ?, email = ?, phone = ?, home_address = ?, bio = ?
+       WHERE id = ?`,
+      [
+        username,
+        nickname || null,
+        gender ?? 0,
+        email || null,
+        phone,
+        homeAddress || null,
+        bio || null,
+        userId,
+      ],
+      (err, data) => {
+        if (err) return reject(err);
+        resolve(data);
+      }
+    );
+  });
+};
+
 module.exports = {
   SUPER_ROLE_CODE,
   getUserByAccount,
@@ -186,4 +239,6 @@ module.exports = {
   getAllMenus,
   getRoleMenuIds,
   saveRoleMenus,
+  getUserProfile,
+  updateUserProfile,
 };

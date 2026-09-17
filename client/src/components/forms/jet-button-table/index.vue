@@ -28,7 +28,13 @@ interface Props {
   buttonBgColor?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {})
+const props = withDefaults(defineProps<Props>(), {
+  type: 'add',
+  icon: '',
+  iconClass: '',
+  iconColor: '',
+  buttonBgColor: '',
+})
 
 const emit = defineEmits<{
   (e: 'click'): void
@@ -45,12 +51,12 @@ const defaultButtons = {
 
 // 获取图标内容
 const iconContent = computed(() => {
-  return props.icon || (props.type ? defaultButtons[props.type]?.icon : '') || ''
+  return props?.icon || (props.type ? defaultButtons[props.type]?.icon : '') || ''
 })
 
 // 获取按钮样式类
 const buttonClass = computed(() => {
-  return props.iconClass || (props.type ? defaultButtons[props.type]?.class : '') || ''
+  return props?.iconClass || (props.type ? defaultButtons[props.type]?.class : '') || ''
 })
 
 const handleClick = () => {

@@ -15,6 +15,8 @@ const {
   isSuperAdmin,
   getUserMenus,
   getAllMenus,
+  getUserProfile,
+  updateUserProfile,
 } = require("../db/rbacApi");
 
 const router = express.Router();
@@ -177,6 +179,72 @@ router.get("/permissions", authMiddleware, async (req, res) => {
     res.json({ code: 0, data: { roles: roleCodes, perms } });
   } catch (err) {
     console.error("获取权限点失败:", err);
+    res.status(500).json({ code: -1, msg: "服务器内部错误，请稍后重试" });
+  }
+});
+
+/**
+ * 获取当前登录用户的个人资料
+ * GET /auth/profile
+ */
+router.get("/profile", authMiddleware, async (req, res) => {
+  try {
+    const userId = Number(req.user.sub);
+    const profile = await getUserProfile(userId);
+    if (!profile) {
+      return res.status(404).json({ code: -1, msg: "用户不存在" });
+    }
+    res.json({ code: 0, data: profile });
+  } catch (err) {
+    console.error("获取个人资料失败:", err);
+    res.status(500).json({ code: -1, msg: "服务器内部错误，请稍后重试" });
+  }
+});
+
+/**
+ * 更新当前登录用户的个人资料（个人中心，只改资料字段）
+ * PUT /auth/profile
+ */
+router.put("/profile", authMiddleware, async (req, res) => {
+  try {
+    const userId = Number(req.user.sub);
+    const {
+      username,
+      nickname = "",
+      gender = 0,
+      email = "",
+      phone,
+      homeAddress = "",
+      bio = "",
+    } = req.body;
+
+    // 姓名、手机号必填；邮箱选填但填了须校验格式
+    if (!username || !username.trim()) {
+      return res.status(400).json({ code: -1, msg: "姓名不能为空" });
+    }
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ code: -1, msg: "手机号不能为空" });
+    }
+    if (!/^1\d{10}$/.test(phone.trim())) {
+      return res.status(400).json({ code: -1, msg: "手机号格式不正确" });
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return res.status(400).json({ code: -1, msg: "邮箱格式不正确" });
+    }
+
+    await updateUserProfile(userId, {
+      username: username.trim(),
+      nickname: nickname.trim(),
+      gender: Number(gender) || 0,
+      email: email.trim(),
+      phone: phone.trim(),
+      homeAddress: homeAddress.trim(),
+      bio: bio.trim(),
+    });
+
+    res.json({ code: 0, msg: "保存成功" });
+  } catch (err) {
+    console.error("更新个人资料失败:", err);
     res.status(500).json({ code: -1, msg: "服务器内部错误，请稍后重试" });
   }
 });

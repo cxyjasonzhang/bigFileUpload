@@ -256,6 +256,30 @@ export function deleteUser(id: number) {
   return request.delete<ApiResponse<unknown>>(`/users/${id}`)
 }
 
+// ─── 个人中心接口 ─────────────────────────────────────────
+
+/** 个人资料（个人中心展示字段） */
+export interface UserProfile {
+  id: number
+  username: string
+  nickname?: string
+  gender?: number
+  email?: string
+  phone: string
+  homeAddress?: string
+  bio?: string
+}
+
+/** 获取当前登录用户的个人资料 */
+export function fetchUserProfile() {
+  return request.get<ApiResponse<UserProfile>>('/auth/profile')
+}
+
+/** 更新当前登录用户的个人资料 */
+export function updateUserProfile(data: Omit<UserProfile, 'id'>) {
+  return request.put<ApiResponse<unknown>>('/auth/profile', data)
+}
+
 // ─── 图标管理接口 ─────────────────────────────────────────
 
 /** 获取图标分组列表 */

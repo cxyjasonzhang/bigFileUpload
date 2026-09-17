@@ -99,7 +99,7 @@ async function handleCommand(cmd: string) {
       console.warn("[DEBUG-logout] push('/login') 被中断/失败:", navErr)
     }
   } else if (cmd === 'profile') {
-    ElMessage.info('个人信息功能开发中')
+    router.push('/profile')
   }
 }
 </script>

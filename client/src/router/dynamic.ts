@@ -94,10 +94,17 @@ function menuToRoutes(menus: MenuTree[]): RouteRecordRaw[] {
  */
 export function registerDynamicRoutes(menuTree: MenuTree[]) {
   const layoutRoute = router.getRoutes().find((r) => r.name === 'Layout')
-  if (!layoutRoute) return
+  if (!layoutRoute) {
+    console.log('[DEBUG-nav] registerDynamicRoutes: 未找到 Layout 路由，动态路由注册失败！')
+    return
+  }
 
   // 移除旧的动态子路由
   const childRoutes = menuToRoutes(menuTree)
+  console.log(
+    '[DEBUG-nav] registerDynamicRoutes 注册路由:',
+    JSON.stringify(childRoutes.map((r) => ({ name: r.name, path: r.path }))),
+  )
   // addRoute 到布局壳（name 为 "Layout" 的父路由）
   childRoutes.forEach((child) => {
     // 同名路由先移除再添加，避免重复

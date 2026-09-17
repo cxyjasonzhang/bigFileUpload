@@ -48,6 +48,7 @@ const entries = computed(() => {
 
 const router = useRouter()
 function go(path: string) {
+  console.log(path, '[--cardPath--]')
   router.push(path)
 }
 </script>

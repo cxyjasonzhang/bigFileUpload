@@ -78,21 +78,27 @@ export async function loadDynamicAccess(): Promise<void> {
   const { registerDynamicRoutes } = await import('@/router/dynamic')
   const permission = usePermissionStore()
 
+  console.log('[DEBUG-nav] loadDynamicAccess 开始')
+
   // 拉取权限点与角色
   const permRes = await fetchUserPermissions()
   if (permRes.data.code === 0) {
     permission.setPermissions(permRes.data.data.perms, permRes.data.data.roles)
   }
+  console.log('[DEBUG-nav] permissions code =', permRes.data.code)
 
   // 拉取动态菜单并组装树
   const routeRes = await fetchUserRoutes()
   if (routeRes.data.code === 0) {
     const list = routeRes.data.data.list
-    console.log(list, 'list')
+    console.log('[DEBUG-nav] routes code =', routeRes.data.code, '菜单数 =', list?.length)
     permission.setMenus(list)
     // 注册动态路由（幂等：重复调用会先清旧再注入）
     registerDynamicRoutes(permission.menuTree)
     permission.isRoutesLoaded = true
+    console.log('[DEBUG-nav] 动态路由注册完成')
+  } else {
+    console.log('[DEBUG-nav] routes code 异常 =', routeRes.data.code, routeRes.data.msg)
   }
 }
 
@@ -190,8 +196,9 @@ export async function initAuth(): Promise<boolean> {
       }
       return true
     }
-  } catch {
+  } catch (err) {
     /* 无法自动恢复，需重新登录 */
+    console.log('[DEBUG-nav] initAuth 恢复失败:', err)
   }
   clearAccessToken()
   authState.user = null

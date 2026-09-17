@@ -53,6 +53,7 @@ const currentRightClickTag = ref<VisitedRoute | null>(null)
 
 /** 处理 Tab 点击：切换到对应路由 */
 function handleTabClick(tag: VisitedRoute) {
+  console.log('[DEBUG-nav] Tab 点击:', tag.path, '当前:', route.path)
   if (tag.path !== route.path) {
     router.push(tag.path)
   }
