@@ -8,8 +8,9 @@ import tseslint from 'typescript-eslint'
 
 /**
  * 读取 unplugin-auto-import 生成的全局变量清单。
- * 由 vite.config.ts 的 AutoImport({ eslintrc: { filepath: './.auto-import.json' } }) 产出，
- * 该文件已纳入版本管理，因此 fresh clone 也能正常解析。
+ * 由 vite.config.ts 的 AutoImport({ eslintrc: { filepath: './.auto-import.json' } }) 产出。
+ * 该文件已加入 .gitignore（生成产物不入库），因此 fresh clone 需先执行
+ * `npm run dev` 或 `npm run build` 生成后再运行 lint。
  */
 function loadAutoImportGlobals() {
   const file = new URL('./.auto-import.json', import.meta.url)

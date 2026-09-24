@@ -10,6 +10,9 @@ server/build/
 server/uploads/
 server/chunks/
 
+# unplugin-auto-import 生成产物（dev/build 时自动重新生成）
+client/.auto-import.json
+
 # 工具与本地配置
 .trae/
 .codebuddy/
