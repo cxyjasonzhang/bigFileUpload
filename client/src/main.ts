@@ -20,6 +20,7 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { setupAuth, initAuth } from './utils/auth'
 import { setupPermission } from './utils/permission'
 import { setupGlobDirectives } from './directives'
+import { configureNProgress } from '@/utils/router.js'
 
 // 注册认证拦截器（401 自动刷新、自动附加 Authorization 头）
 setupAuth()
@@ -50,5 +51,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 // 因此必须在登录态确定后再注册路由并挂载，初始导航才能拿到正确状态。
 initAuth().finally(() => {
   app.use(router)
+  // 顶部进度条
+  configureNProgress()
   app.mount('#app')
 })

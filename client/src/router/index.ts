@@ -4,6 +4,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { authState } from '@/utils/auth'
 import { useLayoutStore } from '@/stores/layout'
+import NProgress from 'nprogress'
 
 // 扩展 vue-router 的 RouteMeta，支持自定义元信息字段
 declare module 'vue-router' {
@@ -76,6 +77,8 @@ const router = createRouter({
 // ─── 鉴权守卫：未登录访问受保护路由 → 重定向 /login 并携带回跳地址 ───
 router.beforeEach((to) => {
   const isPublic = Boolean(to.meta.public)
+  // 开启进度条
+  NProgress.start()
   // 已登录还想去 /login → 直接进工作台
   if (to.path === '/login' && authState.isLoggedIn) {
     return { path: '/workbench' }
@@ -88,6 +91,12 @@ router.beforeEach((to) => {
 
 // ─── 导航完成后：把当前受保护路由补入「已访问列表」（去重）───
 router.afterEach((to) => {
+  // 关闭进度条
+  NProgress.done()
+  // 确保进度条完全移除，避免残影
+  setTimeout(() => {
+    NProgress.remove()
+  }, 600)
   if (to.meta.public) return
   const layout = useLayoutStore()
   layout.addVisited({
