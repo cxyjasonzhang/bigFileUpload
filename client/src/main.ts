@@ -10,10 +10,8 @@ import '@vue-flow/core/dist/style.css'
 /* this contains the default theme, these are optional styles */
 import '@vue-flow/core/dist/theme-default.css'
 import App from './App.vue'
-// 主题 CSS 变量（自定义语义色值）
-import '@/styles/theme.css'
-import '@/styles/core/tailwind.css' // tailwind
-import '@/styles/index.scss' // 引入全局样式
+import '@styles/core/tailwind.css' // tailwind
+import '@styles/index.scss'
 import router from './router'
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'

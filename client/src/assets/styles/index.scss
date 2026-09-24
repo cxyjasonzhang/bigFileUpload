@@ -1,0 +1,11 @@
+// app 基础样式
+@use './core/app.scss';
+
+// Element Plus 亮色主题
+@use './core/el-light.scss';
+
+// Element Plus 组件样式
+@use './core/el-ui.scss';
+
+// 主题样式
+@use './theme.css';

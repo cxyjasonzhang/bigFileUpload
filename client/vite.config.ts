@@ -37,14 +37,14 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@stores': fileURLToPath(new URL('./src/stores', import.meta.url)),
-      '@styles': fileURLToPath(new URL('./src/styles', import.meta.url)),
+      '@styles': fileURLToPath(new URL('./src/assets/styles', import.meta.url)),
       '@imgs': fileURLToPath(new URL('./src/assets/images', import.meta.url)),
     },
   },
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `@use "@/styles/core/el-light.scss" as *;`,
+        additionalData: `@use "@styles/core/el-light.scss" as *;`,
       },
     },
   },

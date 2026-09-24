@@ -317,7 +317,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-@reference '@/styles/core/tailwind.css';
+@reference '@styles/core/tailwind.css';
 
 :deep(.el-tooltip__trigger:focus) {
   outline: none;
