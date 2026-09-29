@@ -38,19 +38,20 @@
     </div>
 
     <!-- 主题配置右侧抽屉 -->
-    <ConfigDrawer v-model="drawerVisible" />
+    <JetSettingsPanel v-model="drawerVisible" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Expand, Fold, FullScreen, Aim, ArrowDown, Setting } from '@element-plus/icons-vue'
+import { Expand, Fold, ArrowDown, Setting } from '@element-plus/icons-vue'
 // import SvgIcon from "../SvgIcon.vue";
 // ElMessage 由 unplugin-auto-import 自动导入
 import { authState, logout } from '@/utils/auth'
 import { useLayoutStore } from '@/stores/layout'
-import ConfigDrawer from './ConfigDrawer.vue'
+// import ConfigDrawer from './ConfigDrawer.vue'
+import JetSettingsPanel from './jet-settings-panel/index.vue'
 
 const router = useRouter()
 const layout = useLayoutStore()

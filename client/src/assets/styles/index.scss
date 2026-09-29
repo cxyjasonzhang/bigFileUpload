@@ -7,5 +7,8 @@
 // Element Plus 组件样式
 @use './core/el-ui.scss';
 
+// 路由切换动画
+@use './core/router-transition';
+
 // 主题样式
 @use './theme.css';

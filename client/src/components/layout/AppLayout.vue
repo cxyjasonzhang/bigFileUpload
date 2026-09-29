@@ -26,11 +26,14 @@
       <div class="layout-content">
         <!-- 路由视图 + keep-alive：仅缓存「已访问列表」中的组件
              v-if="isRefresh" 配合 refreshKey 实现 Tab 右键刷新：短暂销毁再重建，组件重新挂载 -->
-        <router-view v-if="isRefresh" v-slot="{ Component, route }" :style="contentStyle">
-          <keep-alive :include="visitedComponentNames">
-            <component :is="Component" :key="route.path" class="art-page-view" />
-          </keep-alive>
-        </router-view>
+        <!-- 增加过渡效果 -->
+        <transition :name="actualTransition" mode="out-in" appear>
+          <router-view v-if="isRefresh" v-slot="{ Component, route }" :style="contentStyle">
+            <keep-alive :include="visitedComponentNames">
+              <component :is="Component" :key="route.path" class="art-page-view" />
+            </keep-alive>
+          </router-view>
+        </transition>
       </div>
     </div>
   </div>
@@ -44,12 +47,24 @@ import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
 import AppTabs from './AppTabs.vue'
 import { useLayoutStore } from '@/stores/layout'
+import { useSettingStore } from '@/stores/setting.js'
 import { useAutoLayoutHeight } from '@/hooks/core/useLayoutHeight'
 
 const route = useRoute()
 const layout = useLayoutStore()
 
 const { containerMinHeight, headerRef, contentHeaderRef } = useAutoLayoutHeight()
+
+const { pageTransition } = storeToRefs(useSettingStore())
+
+// 标记是否是首次加载（浏览器刷新）
+const isFirstLoad = ref(true)
+
+// 切换动画名称：首次加载、从全屏返回时不使用动画
+const actualTransition = computed(() => {
+  if (isFirstLoad.value) return ''
+  return pageTransition.value
+})
 
 const contentStyle = computed((): CSSProperties => ({
   minHeight: containerMinHeight.value,
@@ -78,6 +93,11 @@ watch(
 // 初始化布局：注册窄屏自动收起侧栏的监听（决策 10）
 onMounted(() => {
   layout.initLayout()
+  // 组件挂载后标记首次加载完成
+  // 延迟一帧，确保首次渲染完成
+  nextTick(() => {
+    isFirstLoad.value = false
+  })
 })
 
 // 全屏 ↔ 普通切换时，useAutoLayoutHeight 通过 getElementById 缓存的 headerRef 会指向
