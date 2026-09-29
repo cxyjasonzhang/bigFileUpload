@@ -16,7 +16,7 @@
     />
 
     <!-- 表格区域 -->
-    <ElCard class="flex-1 art-table-card">
+    <ElCard class="flex-1 art-table-card" shadow="never">
       <!-- 表格工具栏 -->
       <JetTableHeader :loading="loading" layout="size,fullscreen" full-class="user-page">
         <template #left>

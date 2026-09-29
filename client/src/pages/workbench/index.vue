@@ -54,10 +54,6 @@ function go(path: string) {
 </script>
 
 <style scoped>
-.workbench {
-  padding: 8px;
-}
-
 .welcome-card {
   margin-bottom: 16px;
   border-radius: 12px;

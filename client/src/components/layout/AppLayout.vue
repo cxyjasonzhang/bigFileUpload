@@ -122,6 +122,7 @@ watch(
   width: 100%;
   /* 禁止 body 级滚动条，滚动统一收敛到内部内容区，避免全屏/常规切换时残留页面级滚动条 */
   overflow: hidden;
+  background-color: var(--default-bg-color);
 }
 
 .layout-main {
@@ -135,7 +136,7 @@ watch(
   flex: 1;
   overflow: auto;
   padding: 16px;
-  background: var(--app-content-bg);
+  /* background: var(--app-content-bg); */
   min-height: 0;
 }
 

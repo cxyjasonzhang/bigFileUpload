@@ -101,8 +101,8 @@ async function handleCommand(cmd: string) {
 .app-header {
   height: 56px;
   flex-shrink: 0;
-  background: var(--app-header-bg);
-  border-bottom: 1px solid var(--app-border);
+  // background: var(--app-header-bg);
+  // border-bottom: 1px solid var(--app-border);
   display: flex;
   align-items: center;
   justify-content: space-between;

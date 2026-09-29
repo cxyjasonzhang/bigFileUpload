@@ -212,12 +212,10 @@ function handleMenuSelect(item: MenuItemType) {
 .app-tabs {
   height: 40px;
   flex-shrink: 0;
-  background: var(--app-tab-bg);
-  border-bottom: 1px solid var(--app-tab-border);
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 12px;
+  padding: 0 16px;
   overflow-x: auto;
 }
 
@@ -225,6 +223,20 @@ function handleMenuSelect(item: MenuItemType) {
   flex-shrink: 0;
   cursor: pointer;
   user-select: none;
+  background-color: var(--app-tab-bg) !important;
+  font-size: 13px !important;
+  height: 32px !important;
+  line-height: 32px;
+  border-radius: 7px;
+  border-color: var(--art-card-border);
+
+  &.el-tag--info {
+    color: var(--app-text-primary);
+  }
+
+  &:hover {
+    color: var(--art-primary);
+  }
 }
 
 .tab-dropdown-trigger {
@@ -233,14 +245,12 @@ function handleMenuSelect(item: MenuItemType) {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 4px;
+  border: 1px solid var(--art-card-border);
   cursor: pointer;
   color: var(--app-text-regular);
-}
-
-.tab-dropdown-trigger:hover {
-  background: var(--app-tab-close-hover-bg);
+  background-color: var(--art-hover-color);
 }
 </style>

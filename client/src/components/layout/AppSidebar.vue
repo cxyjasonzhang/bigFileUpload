@@ -75,6 +75,7 @@ function handleSelect(index: string) {
   flex-shrink: 0;
   background: var(--app-sidebar-bg);
   color: var(--app-text-primary);
+  border-right: 1px solid var(--art-card-border);
   display: flex;
   flex-direction: column;
   transition: width 0.2s;

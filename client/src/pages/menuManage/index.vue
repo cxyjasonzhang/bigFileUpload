@@ -16,7 +16,7 @@
     />
 
     <!-- 表格区域：树形菜单表格 -->
-    <ElCard class="flex-1 art-table-card">
+    <ElCard class="flex-1 art-table-card" shadow="never">
       <JetTableHeader
         v-model:columns="columnChecks"
         :loading="loading"
