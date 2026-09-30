@@ -63,7 +63,7 @@
 
       <!-- 按钮无图标概念 -->
       <ElFormItem v-if="form.menuType !== 2" label="图标" prop="icon">
-        <ElInput v-model="form.icon" placeholder="图标类名，如 Edit" maxlength="100" />
+        <IconPicker v-model="form.icon" />
       </ElFormItem>
 
       <!-- 仅菜单类型可嵌入 iframe -->
@@ -98,6 +98,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import type { FormInstance, FormRules, TreeOptionProps } from 'element-plus'
 import DraggableDialog from '@/components/DraggableDialog.vue'
+import IconPicker from '@/components/IconPicker.vue'
 import { fetchCreateMenu, fetchUpdateMenu } from '@/utils/api'
 import type { MenuItemPayload, MenuType } from '@/utils/api'
 import type { MenuItem, MenuTree } from '@/types/system/menu'

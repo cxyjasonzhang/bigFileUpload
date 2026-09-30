@@ -5,6 +5,7 @@ const { authMiddleware } = require("../middleware/auth")
 const {
   getIcons, getIconById, resolveIcon, createIcon, batchCreateIcons,
   updateIcon, deleteIcon, batchDeleteIcons, getIconNamesByGroup, getIconVersion,
+  getIconOptions,
 } = require("../db/iconApi")
 
 const router = express.Router()
@@ -70,6 +71,20 @@ router.get("/names", async (req, res) => {
     res.json({ code: 0, data: names })
   } catch (err) {
     console.error("获取图标名称列表失败:", err)
+    res.status(500).json({ code: -1, msg: "服务器内部错误" })
+  }
+})
+
+/**
+ * 获取全量图标选项（图标选择器专用，轻量不含 svgContent）
+ * GET /icons/options
+ */
+router.get("/options", async (req, res) => {
+  try {
+    const list = await getIconOptions()
+    res.json({ code: 0, data: list })
+  } catch (err) {
+    console.error("获取图标选项失败:", err)
     res.status(500).json({ code: -1, msg: "服务器内部错误" })
   }
 })

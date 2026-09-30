@@ -347,6 +347,22 @@ export function getIconNames(groupId: number) {
   })
 }
 
+/** 图标选择器选项（轻量，不含 svgContent，预览由 SvgIcon 走三级缓存加载） */
+export interface IconOption {
+  id: number
+  iconName: string
+  groupId: number
+  groupSlug: string
+  groupName: string
+  /** 图标引用名，格式：分组slug/图标名（SvgIcon 的 name 入参） */
+  value: string
+}
+
+/** 获取全量图标选项（图标选择器专用） */
+export function getIconOptions() {
+  return request.get<ApiResponse<IconOption[]>>('/icons/options')
+}
+
 /** 新增单个图标 */
 export function createIcon(data: IconInput) {
   return request.post<ApiResponse<unknown>>('/icons', data)

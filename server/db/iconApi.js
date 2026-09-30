@@ -320,6 +320,28 @@ const getIconNamesByGroup = (groupId) => {
   })
 }
 
+/**
+ * 获取全量图标选项（轻量版，供图标选择器使用）
+ * 仅返回引用所需的 slug/名称，不返回 svgContent，避免传输大量 SVG 源码；
+ * 图标预览由前端 SvgIcon 组件按 value 走三级缓存自行加载。
+ * @returns {Promise<Array<{id, iconName, groupSlug, groupName, value}>>}
+ */
+const getIconOptions = () => {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT i.id, i.name AS iconName, i.group_id AS groupId,
+             g.slug AS groupSlug, g.name AS groupName
+      FROM icons i
+      LEFT JOIN icon_groups g ON g.id = i.group_id
+      ORDER BY g.sort_order ASC, g.id ASC, i.name ASC
+    `
+    connection.query(sql, (err, data) => {
+      if (err) return reject(err)
+      resolve(data.map((row) => ({ ...row, value: `${row.groupSlug}/${row.iconName}` })))
+    })
+  })
+}
+
 module.exports = {
   getGroups,
   getGroupById,
@@ -336,4 +358,5 @@ module.exports = {
   deleteIcon,
   batchDeleteIcons,
   getIconNamesByGroup,
+  getIconOptions,
 }
