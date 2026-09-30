@@ -251,6 +251,6 @@ function handleMenuSelect(item: MenuItemType) {
   border: 1px solid var(--art-card-border);
   cursor: pointer;
   color: var(--app-text-regular);
-  background-color: var(--art-hover-color);
+  background-color: var(--app-tab-bg);
 }
 </style>

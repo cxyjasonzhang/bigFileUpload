@@ -14,10 +14,8 @@
 
 <script setup lang="ts">
 import { useCommon } from '@/hooks/core/useCommon'
-// import { useUserStore } from '@/store/modules/user'
 
 const router = useRouter()
-// const userStore = useUserStore()
 
 interface ExceptionData {
   /** 标题 */
@@ -41,15 +39,9 @@ const { homePath } = useCommon()
 
 const backHome = () => {
   const targetHomePath = homePath.value || '/'
-
-  // if (!userStore.isLogin) {
   router.push({
     name: 'Login',
     query: { redirect: targetHomePath },
   })
-  //   return
-  // }
-
-  // router.push('/')
 }
 </script>

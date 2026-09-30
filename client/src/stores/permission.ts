@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { HOME_PAGE_PATH } from '@/router'
 import { getFirstMenuPath } from '@/utils/permission'
+import { fetchUserPermissions, fetchUserRoutes } from '@/utils/api'
 import type { MenuItem, MenuTree } from '@/types/router'
 
 export const usePermissionStore = defineStore('permission', () => {
@@ -17,8 +18,6 @@ export const usePermissionStore = defineStore('permission', () => {
   const perms = ref<string[]>([])
   /** 当前用户角色编码集合 */
   const roles = ref<string[]>([])
-  /** 动态路由是否已注册（避免重复 addRoute） */
-  const isRoutesLoaded = ref(false)
 
   /** 设置菜单数据并组装树 */
   function setMenus(list: MenuItem[]) {
@@ -54,13 +53,35 @@ export const usePermissionStore = defineStore('permission', () => {
     return perms.value.includes(perm)
   }
 
+  /**
+   * 加载当前用户的权限点 + 动态菜单，并注册动态路由
+   * 登录成功、会话恢复时都会调用（权限数据的唯一加载入口）
+   */
+  async function load() {
+    // 拉取权限点与角色
+    const permRes = await fetchUserPermissions()
+    if (permRes.data.code === 0) {
+      setPermissions(permRes.data.data.perms, permRes.data.data.roles)
+    }
+
+    // 拉取动态菜单并组装树 + 注册路由
+    const routeRes = await fetchUserRoutes()
+    if (routeRes.data.code === 0) {
+      const list = routeRes.data.data.list
+      setMenus(list)
+      // 动态导入注册逻辑，避免 permission → dynamic → router → auth 的静态循环依赖
+      const { registerDynamicRoutes } = await import('@/router/dynamic')
+      registerDynamicRoutes(menuTree.value)
+    }
+  }
+
   /** 重置（登出时调用） */
   function reset() {
+    homePath.value = HOME_PAGE_PATH
     menuList.value = []
     menuTree.value = []
     perms.value = []
     roles.value = []
-    isRoutesLoaded.value = false
   }
 
   return {
@@ -68,12 +89,12 @@ export const usePermissionStore = defineStore('permission', () => {
     menuTree,
     perms,
     roles,
-    isRoutesLoaded,
     getHomePath,
     setHomePath,
     setMenus,
     setPermissions,
     hasPerm,
+    load,
     reset,
   }
 })

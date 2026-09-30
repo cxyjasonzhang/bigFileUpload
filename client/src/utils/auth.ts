@@ -1,13 +1,6 @@
 // auth.ts - 登录态、token 管理、401 刷新拦截
 import { reactive } from 'vue'
-import {
-  request,
-  setupAuthInterceptor,
-  type ApiResponse,
-  type User,
-  fetchUserRoutes,
-  fetchUserPermissions,
-} from './api'
+import { request, setupAuthInterceptor, type ApiResponse, type User } from './api'
 
 // ─── access token 只存在内存中（不落盘） ──────────────────
 let accessToken: string | null = null
@@ -59,9 +52,10 @@ export async function login(username: string, password: string): Promise<LoginRe
   authState.user = res.data.user
   authState.isLoggedIn = true
 
-  // 登录成功后拉取动态菜单与权限（失败不阻断登录跳转）
+  // 登录成功后加载权限与动态菜单（失败不阻断登录跳转）
   try {
-    await loadDynamicAccess()
+    const { usePermissionStore } = await import('@/stores/permission')
+    await usePermissionStore().load()
   } catch (err) {
     console.error('拉取动态菜单失败（不影响登录）:', err)
   }
@@ -69,79 +63,16 @@ export async function login(username: string, password: string): Promise<LoginRe
 }
 
 /**
- * 拉取动态菜单 + 权限点，并注册动态路由
- * 登录与刷新恢复时都会调用
+ * 刷新 access token（浏览器自动带 refresh_token Cookie）
+ * 纯请求函数：并发去重与 401 重放统一由 api.ts 拦截器层负责，此处不再自建锁
  */
-export async function loadDynamicAccess(): Promise<void> {
-  const { usePermissionStore } = await import('@/stores/permission')
-  const { registerDynamicRoutes } = await import('@/router/dynamic')
-  const permission = usePermissionStore()
-
-  // 拉取权限点与角色
-  const permRes = await fetchUserPermissions()
-  if (permRes.data.code === 0) {
-    permission.setPermissions(permRes.data.data.perms, permRes.data.data.roles)
-  }
-
-  // 拉取动态菜单并组装树
-  const routeRes = await fetchUserRoutes()
-  if (routeRes.data.code === 0) {
-    const list = routeRes.data.data.list
-    permission.setMenus(list)
-    // 注册动态路由（幂等：重复调用会先清旧再注入）
-    registerDynamicRoutes(permission.menuTree)
-    permission.isRoutesLoaded = true
-  }
-}
-
-// ─── 刷新并发锁 ──────────────────────────────────────────
-let isRefreshing = false
-let refreshSubscribers: Array<{
-  resolve: (token: string) => void
-  reject: (err: unknown) => void
-}> = []
-
-function subscribeRefresh(cb: {
-  resolve: (token: string) => void
-  reject: (err: unknown) => void
-}) {
-  refreshSubscribers.push(cb)
-}
-
-/** 真正发起一次刷新请求 */
-async function doRefreshInternal(): Promise<string> {
+export async function refreshAccessToken(): Promise<string> {
   const { data: res } = await request.post<ApiResponse<LoginResult>>('/auth/refresh')
   if (res.code !== 0) {
     throw new Error(res.msg || '刷新失败')
   }
   setAccessToken(res.data.access_token)
   return res.data.access_token
-}
-
-/**
- * 刷新 access token（浏览器自动带 refresh_token Cookie）
- * 并发调用时复用同一次请求结果，避免服务端 reuse 检测误杀
- */
-export async function refreshAccessToken(): Promise<string> {
-  if (isRefreshing) {
-    // 已有刷新在飞，排队等结果即可
-    return new Promise<string>((resolve, reject) => {
-      subscribeRefresh({ resolve, reject })
-    })
-  }
-
-  isRefreshing = true
-  try {
-    const token = await doRefreshInternal()
-    refreshSubscribers.forEach((s) => s.resolve(token))
-    return token
-  } catch (err) {
-    refreshSubscribers.forEach((s) => s.reject(err))
-    throw err
-  } finally {
-    refreshSubscribers = []
-    isRefreshing = false
-  }
 }
 
 /** 登出 */
@@ -177,9 +108,10 @@ export async function initAuth(): Promise<boolean> {
     if (res.code === 0 && res.data.user) {
       authState.user = res.data.user
       authState.isLoggedIn = true
-      // 恢复登录态后拉取动态菜单与权限（失败不阻断恢复）
+      // 恢复登录态后加载权限与动态菜单（失败不阻断恢复）
       try {
-        await loadDynamicAccess()
+        const { usePermissionStore } = await import('@/stores/permission')
+        await usePermissionStore().load()
       } catch (err) {
         console.error('恢复登录态时拉取动态菜单失败:', err)
       }

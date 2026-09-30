@@ -1,7 +1,6 @@
 // api.ts - 统一请求封装与后端接口
 import axios, {
   type AxiosInstance,
-  type AxiosResponse,
   type AxiosRequestConfig,
   type AxiosProgressEvent,
   type AxiosError,
@@ -424,14 +423,25 @@ export interface AuthInterceptorOptions {
 }
 
 let isRefreshing = false
-let refreshSubscribers: Array<(token: string) => void> = []
+let refreshSubscribers: Array<{
+  resolve: (token: string) => void
+  reject: (err: unknown) => void
+}> = []
 
 function onRefreshed(token: string) {
-  refreshSubscribers.forEach((cb) => cb(token))
+  refreshSubscribers.forEach((s) => s.resolve(token))
   refreshSubscribers = []
 }
 
-function addRefreshSubscriber(cb: (token: string) => void) {
+function onRefreshFailed(err: unknown) {
+  refreshSubscribers.forEach((s) => s.reject(err))
+  refreshSubscribers = []
+}
+
+function addRefreshSubscriber(cb: {
+  resolve: (token: string) => void
+  reject: (err: unknown) => void
+}) {
   refreshSubscribers.push(cb)
 }
 
@@ -482,26 +492,29 @@ export function setupAuthInterceptor({
             return request(config)
           }
           return Promise.reject(error)
-        } catch {
+        } catch (err) {
           isRefreshing = false
-          refreshSubscribers = []
+          onRefreshFailed(err)
           onAuthFailed()
           return Promise.reject(error)
         }
       }
 
-      // 已有刷新在进行中，排队等待
-      return new Promise((resolve) => {
-        addRefreshSubscriber((token) => {
-          if (config) {
-            config.headers = {
-              ...config.headers,
-              Authorization: `Bearer ${token}`,
+      // 已有刷新在进行中，排队等待（刷新失败时 reject，避免排队请求永久挂起）
+      return new Promise((resolve, reject) => {
+        addRefreshSubscriber({
+          resolve: (token) => {
+            if (config) {
+              config.headers = {
+                ...config.headers,
+                Authorization: `Bearer ${token}`,
+              }
+              resolve(request(config))
+            } else {
+              resolve(request(error.config as AxiosRequestConfig))
             }
-            resolve(request(config))
-          } else {
-            resolve(request(error.config as AxiosRequestConfig))
-          }
+          },
+          reject,
         })
       })
     },
